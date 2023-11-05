@@ -1,13 +1,17 @@
-class BigClass
-  def self.class_method
-    puts "I am a class method"
+class Some
+  attr_accessor :field
+
+  def get_field
+    field
+  end
+
+  def set_field(field)
+    self.field=(field)
   end
 end
 
-class SmallClass < BigClass
-end
+obj = Some.new
 
-class_little = SmallClass.new
-
-SmallClass.class_method
-
+obj.field = 'spoon'
+obj.set_field 'moon'
+p obj.field

@@ -22,6 +22,12 @@ Methods and keywords:
 - `Object#send` - explicit message-sending method, can be used to invoke methods on objects. The first argument passed to `send` should be a symbol or string representing the method you want to call; further arguments are the arguments to the method named by the symbol or string.
 - `Object#instance_of?` - returns `true` if the calling object is an instance of the `Class` passed as argument, `false` otherwise. Note that if called on an instance of a subclass with the superclass passed as argument, `instance_of?` returns `false`; it only returns `true` if the instance is a direct instance of the `Class` passed as argument.
 - `Object#to_s` - returns a string representation of the calling object. You generally want to override this method.
+- `Object#allocate` - allocates space for a new object of the calling class. Does not call `initialize` constructor. `allocate` is automatically called by `new` before `new` calls `initialize`.
+- `class << self` - ???
+- `begin` - keyword begins a section of code that might be expected to raise exceptions
+- `rescue` - keyword followed by `=>` and the name of a local variable to which the exception object will be assigned if an exception is raised. Begins the section where an exception can be handled.
+- `Kernel#raise` - method used to explicitly and deliberately raise an exception
+- `ensure` - keyword begins a block that is always executed whether an exception is raised or not
 
 ### The Object Model
 
@@ -122,3 +128,38 @@ In versions of Ruby prior to 2.7, it was illegal to call `self.some_private_meth
 It is important to get acquainted with the methods in `Object` to avoid overriding them accidentally. Does this apply to `Kernel` and `BasicObject` too?
 
 It seems that if you create an class variable in a superclass, that variable is then shared among subclasses.
+
+"The purpose of the **constructor** [`initialize`] is to initiate the state of an object." -https://zetcode.com/lang/rubytutorial/oop/
+
+"An object's **attributes** are the data items that are bundled inside that object. The items are also called *instance variables* or *member fields*. An instance variable is a variable defined in a class, for which each object in the class has a separate copy" - Zetcode I
+
+**operator overloading**
+
+**constructor overloading** - "the ability to have multiple types of constructors in a class. This way we can create an object with different number or different types of parameters. Ruby **has no constructor overloading** that we know from some programming languages. This behavior can be simulated to some extent with default parameter values in Ruby" - Zetcode I
+
+Superclass, parent class, base class, ancestor
+
+Subclass, child class, derived class, descendant
+
+"Class methods cannot access instance variables" - Zetcode II
+
+"Exceptions are objects that signal deviations from the normal flow of program execution. Exceptions are **raised**, thrown or **initiated**" - Zetcode II
+
+Exception objects are 'descendants of a built-in exception class' - Zetcode II
+
+"Exceptions are objects. They are descendants of a built-in `Exception` class. Exception objects carry information about the exception. Its type (the exception's class name), an optional descriptive string, and optional traceback information. Programs may subclass `Exception`, or more often `StandardError`, to obtain custom Exception objects that provide additional information about operational anomalies" - Zetcode II
+
+"If the `raise` [method] does not have a specific exception as a parameter, a `RuntimeError` exception is raised setting its message to the given string" - Zetcode II
+
+"Ruby's `ensure` clause creates a block of code that always executes, whether there is an exception or not" - Zetcode II
+
+"Custom exceptions should inherit from the `StandardError` class" - Zetcode II
+
+
+
+### <u>Lesson 1:4 Attributes</u> ###
+
+"you'll often find in our text (and external literature) that the term 'attributes' in Ruby is used quite loosely and is generally approximated as *instance variables*. Most of the time, these instance variables have accessor methods (because objects that are entirely secretive aren't very useful); however, it's not a must for the purposes of this definition."   - LS
+
+
+
