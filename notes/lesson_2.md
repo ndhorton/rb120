@@ -78,3 +78,33 @@ library.add_book(trial)
 
 then the collaboration is between class Library and class Book, even though the object assigned to `@books` is an Array object, since the *meaningful* domain relationship you are modeling is a Library *having* Books; this is the thing to get right in the design process and the fact that the Book objects are stored in an array is more of an implementation detail than a meaningful part of the relationship between domain entities which is being modeled.
 
+
+
+## Modules ##
+
+<img src="module_class_hierarchy.png">
+
+"One of the limitations of class inheritance in Ruby is that a class can only directly sub-class from one super class. We call this <b>single inheritance</b>. In some situations, this limitation makes it very difficult to accurately model the problem domain. For example, suppose we have a new pat animal called `Fish`. The are pets that can swim, and have other characteristics like living in a small bowl, etc." - LS 2:10
+
+"Some programming languages allow classes to directly inherit from multiple classes, a functionality known as <i>multiple inheritance</i>. Ruby's answer to multiple inheritance is by way of <i>mixing in</i> behaviours. A class can only sub-class from one parent, but it can mix in as many modules as it likes." - RB120 2:10
+
+"The solution is to create a module, called <i>Swimmable</i>, and mix in that module in the appropriate classes."
+
+```ruby
+module Swimmable
+  def swim
+    "swimming!"
+  end
+end
+
+class Dog
+  include Swimmable
+  # ... rest of class omitted
+end
+
+class Fish
+  include Swimmable
+  # ... rest of class omitted
+end
+```
+
