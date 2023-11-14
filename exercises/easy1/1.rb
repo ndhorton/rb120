@@ -1,4 +1,4 @@
-# Bammer Class
+# Banner Class
 
 =begin
 
@@ -176,7 +176,7 @@ class Banner
     # you could have more complex logic to deal with bad input
     # you could set too-low width input to the minimum width (5)
     # and too-high width input could be set to maximum width (TERMINAL_WIDTH)
-    @field_width  = if width && width > 1 + PADDING && width < TERMINAL_WIDTH
+    @field_width  = if width && width > (1 + PADDING) && width < TERMINAL_WIDTH
                       width - PADDING
                     elsif @message.size > TERMINAL_WIDTH - PADDING
                       TERMINAL_WIDTH - PADDING
@@ -194,9 +194,6 @@ class Banner
   end
 
   def message_lines
-    # get array of message lines
-    # for each line transform to
-    #  "| #{line} |"
     lines = @message.scan(/.{1,#{@field_width}}/)
     lines.map { |text| "| #{text.center(@field_width)} |"}
   end
