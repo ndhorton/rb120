@@ -86,7 +86,7 @@ then the collaboration is between class Library and class Book, even though the 
 
 "One of the limitations of class inheritance in Ruby is that a class can only directly sub-class from one super class. We call this <b>single inheritance</b>. In some situations, this limitation makes it very difficult to accurately model the problem domain. For example, suppose we have a new pat animal called `Fish`. The are pets that can swim, and have other characteristics like living in a small bowl, etc." - LS 2:10
 
-"Some programming languages allow classes to directly inherit from multiple classes, a functionality known as <i>multiple inheritance</i>. Ruby's answer to multiple inheritance is by way of <i>mixing in</i> behaviours. A class can only sub-class from one parent, but it can mix in as many modules as it likes." - RB120 2:10
+"Some programming languages allow classes to directly inherit from multiple classes, a functionality known as <i>multiple inheritance</i>. Ruby's answer to multiple inheritance is by way of <i>mixing in</i> behaviors. A class can only sub-class from one parent, but it can mix in as many modules as it likes." - RB120 2:10
 
 "The solution is to create a module, called <i>Swimmable</i>, and mix in that module in the appropriate classes."
 
@@ -107,4 +107,46 @@ class Fish
   # ... rest of class omitted
 end
 ```
+
+## Coding Tips, 2:18
+
+**spike** - "exploratory code to play around with the problem"
+
+* Explore the problem before the design
+* Repetitive nouns in method names is a sign that you're missing a class
+* When naming methods, don't include the class name
+* Avoid long method invocation chains
+* Avoid design patterns for now - 'premature optimization is the root of all evil'
+
+avoid optimizing for performance but also avoid attempting to anticipate what will be optimally flexible or maintainable for now (optimizing for best practices)
+
+## CRC Cards ##
+
+**Class Responsibility Collaborator** cards
+
+Class name and superclass name (heading)
+
+Responsibilities (lower left)
+
+Collaborators / custom class objects tracking state of objects of this class (lower right)
+
+CRC model - a collection of cards
+
+
+
+1. Write a description of the problem and extract major nouns and verbs
+2. Make an initial guess at organizing the verbs and nouns into methods and classes/modules, then do a **spike** to explore the problem with temporary code
+3. When you have a better idea of the problem, model your thoughts into CRC cards
+
+## ABC Size ##
+
+Let a = assignments
+
+b = branches (aka method calls)
+
+c = conditions
+
+`abc_size = Math.sqrt(a**2 + b**2 + c**2)`
+
+If the resulting value is greater than 18 (by default), Rubocop flags the method as too complex
 
