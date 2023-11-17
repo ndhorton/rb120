@@ -1,4 +1,4 @@
-# Rock Paper Scissors - Lizard, Spock
+# Rock Paper Scissors - add class for each type of move
 
 class Player
   attr_accessor :move, :name, :score
@@ -6,6 +6,16 @@ class Player
   def initialize
     self.score = 0
     set_name
+  end
+
+  def make_move(value)
+    case value
+    when 'rock'     then Rock.new
+    when 'paper'    then Paper.new
+    when 'scissors' then Scissors.new
+    when 'lizard'   then Lizard.new
+    when 'spock'    then Spock.new
+    end
   end
 end
 
@@ -35,58 +45,25 @@ class Human < Player
       break if Move::VALUES.include? choice
       puts "Sorry, invalid choice."
     end
-    self.move = Move.new(choice)
+    self.move = make_move(choice)
   end
 end
 
 class Computer < Player
+  NAMES = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5']
+
   def set_name
-    self.name = ['R2D2', 'Hal', 'Chappie', 'Sonny', 'Number 5'].sample
+    self.name = NAMES.sample
   end
 
   def choose
-    self.move = Move.new(Move::VALUES.sample)
+    random_value = Move::VALUES.sample
+    self.move = make_move(random_value)
   end
 end
 
 class Move
-  attr_reader :value
-
   VALUES = ['rock', 'paper', 'scissors', 'lizard', 'spock']
-
-  ROCK_RULE = {
-    'scissors' => true,
-    'lizard' => true
-  }
-  ROCK_RULE.default = false
-
-  PAPER_RULE = {
-    'rock' => true,
-    'spock' => true
-  }
-  PAPER_RULE.default = false
-
-  SCISSORS_RULE = {
-    'paper' => true,
-    'lizard' => true
-  }
-  SCISSORS_RULE.default = false
-
-  LIZARD_RULE = {
-    'spock' => true,
-    'paper' => true
-  }
-  LIZARD_RULE.default = false
-
-  SPOCK_RULE = {
-    'rock' => true,
-    'scissors' => true
-  }
-  SPOCK_RULE.default = false
-
-  def initialize(value)
-    @value = value
-  end
 
   def rock?
     @value == 'rock'
@@ -108,27 +85,78 @@ class Move
     @value == 'spock'
   end
 
+  def to_s
+    @value
+  end
+end
+
+class Rock < Move
+  def initialize
+    @value = 'rock'
+  end
+
   def >(other_move)
-    other_value = other_move.value
-    if rock?        then ROCK_RULE[other_value]
-    elsif paper?    then PAPER_RULE[other_value]
-    elsif scissors? then SCISSORS_RULE[other_value]
-    elsif lizard?   then LIZARD_RULE[other_value]
-    elsif spock?    then SPOCK_RULE[other_value]
-    end
+    other_move.scissors? || other_move.lizard?
   end
 
   def <(other_move)
-    if other_move.rock?        then ROCK_RULE[value]
-    elsif other_move.paper?    then PAPER_RULE[value]
-    elsif other_move.scissors? then SCISSORS_RULE[value]
-    elsif other_move.lizard?   then LIZARD_RULE[value]
-    elsif other_move.spock?    then SPOCK_RULE[value]
-    end
+    other_move.paper? || other_move.spock?
+  end
+end
+
+class Paper < Move
+  def initialize
+    @value = 'paper'
   end
 
-  def to_s
-    @value
+  def >(other_move)
+    other_move.rock? || other_move.spock?
+  end
+
+  def <(other_move)
+    other_move.scissors? || other_move.spock?
+  end
+end
+
+class Scissors < Move
+  def initialize
+    @value = 'scissors'
+  end
+
+  def >(other_move)
+    other_move.paper? || other_move.lizard?
+  end
+
+  def <(other_move)
+    other_move.rock? || other_move.spock?
+  end
+end
+
+class Lizard < Move
+  def initialize
+    @value = 'lizard'
+  end
+
+  def >(other_move)
+    other_move.paper? || other_move.spock?
+  end
+
+  def <(other_move)
+    other_move.rock? || other_move.scissors?
+  end
+end
+
+class Spock < Move
+  def initialize
+    @value = 'spock'
+  end
+
+  def >(other_move)
+    other_move.rock? || other_move.scissors?
+  end
+
+  def <(other_move)
+    other_move.paper? || other_move.lizard?
   end
 end
 
