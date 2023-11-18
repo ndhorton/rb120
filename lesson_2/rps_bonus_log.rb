@@ -1,9 +1,140 @@
 # Rock Paper Scissors - add class for each type of move
 
+=begin
+
+As long as the user doesn't quit (?)
+
+Keep track of a history of moves by bothe the human and computer
+
+What data structure?
+
+New class or existing class?
+
+What will display output look like?
+--
+so i assume this would look like
+
+#{human.name}: Move#to_s
+#{computer.name}: Move#to_s
+
+you might want to capture each pair of moves as a transaction with log
+
+So you could have something like
+
+[
+  [{human:[human.name, human.move]}, {computer: [computer.name, computer.move]} ],
+  ...
+]
+
+or you could have an array of log events
+
+so just
+[
+  LogEvent,
+  LogEvent,
+  ...
+]
+
+and each LogEvent could be
+
+class LogEvent
+-must keep track of a human name and a human move
+-must keep track of a computer name and a computer move
+-must keep track of number of moves
+
+collaborators:
+-Move
+
+class LogEvent
+  @@number_of_moves = 0
+
+  attr_reader :human_name, :human_move, :computer_name, :computer_move, :number
+
+  def initialize(human_name, human_move, computer_name, computer_move)
+    @human_name = human_name
+    @human_move = human_move
+
+    @computer_name = computer_name
+    @computer_move = computer_move
+
+    @@number_of_moves += 1
+    @number = @@number_of_moves
+  end
+end
+
+log = array of LogEvent objects
+
+which classes need to access the log?
+needs to be stored in RPSGame (this is what 'as long as the user doesn't quit' means)
+needs to be passed to Human and Computer on initialization
+
+to view the log, every opportunity for input (making move choice, whether to quit or play again)
+should have to option to type 'log' for the log
+
+the display should be something like
+
+#{log.number}
+#{human.name}: #{human.move}
+#{computer.name}: #{computer.move}
+[empty line]
+
+perhaps the moves should be displayed in reverse order (most recent first)?
+
+=end
+
+class Log
+  def initialize
+    @events = []
+  end
+
+  def <<(log_event)
+    events << log_event
+  end
+
+  def display
+    if events.empty?
+      puts "No moves have been made yet."
+      puts
+    else
+      puts "All rounds played so far this session:"
+      events.each do |event|
+        puts "#{event.number}"
+        puts "#{event.human_name}: #{event.human_move}"
+        puts "#{event.computer_name}: #{event.computer_move}"
+        puts
+      end
+    end
+    puts "Press <enter> to return"
+    gets
+  end
+
+  private
+
+  attr_reader :events
+end
+
+class LogEvent
+  @@number_of_moves = 0
+
+  attr_reader :human_name, :human_move, :computer_name, :computer_move, :number
+
+  def initialize(human_name, human_move, computer_name, computer_move)
+    @human_name = human_name
+    @human_move = human_move
+
+    @computer_name = computer_name
+    @computer_move = computer_move
+
+    @@number_of_moves += 1
+    @number = @@number_of_moves
+  end
+end
+
 class Player
   attr_accessor :move, :name, :score
 
-  def initialize
+  def initialize(log)
+    @log = log
     self.score = 0
     set_name
   end
@@ -43,6 +174,10 @@ class Human < Player
       puts "Please choose #{options}:"
       choice = gets.chomp
       break if Move::VALUES.include? choice
+      if choice == 'log'
+        @log.display
+        next
+      end
       puts "Sorry, invalid choice."
     end
     self.move = make_move(choice)
@@ -54,6 +189,7 @@ class Computer < Player
 
   def set_name
     self.name = NAMES.sample
+    @all_possible_moves
   end
 
   def choose
@@ -64,6 +200,8 @@ end
 
 class Move
   VALUES = ['rock', 'paper', 'scissors', 'lizard', 'spock']
+
+  protected
 
   def rock?
     @value == 'rock'
@@ -166,11 +304,31 @@ class Spock < Move
 end
 
 class Round
-  attr_accessor :human, :computer
-
-  def initialize(human, computer)
+  def initialize(human, computer, log)
+    @log = log
     @human = human
     @computer = computer
+  end
+
+  def play
+    human.choose
+    computer.choose
+    @log << LogEvent.new(human.name, human.move, computer.name, computer.move)
+    display_moves
+    display_winner
+    tally_scores
+  end
+
+  private
+
+  attr_accessor :human, :computer
+
+  def tally_scores
+    if human.move > computer.move
+      human.score += 1
+    elsif human.move < computer.move
+      computer.score += 1
+    end
   end
 
   def display_moves
@@ -188,26 +346,16 @@ class Round
     end
     puts
   end
-
-  def play
-    human.choose
-    computer.choose
-    display_moves
-    display_winner
-    tally_scores
-  end
-
-  def tally_scores
-    if human.move > computer.move
-      human.score += 1
-    elsif human.move < computer.move
-      computer.score += 1
-    end
-  end
 end
 
 # Orchestration Engine class
 class RPSGame
+  def initialize
+    @log = Log.new
+    @human = Human.new(log)
+    @computer = Computer.new(log)
+  end
+
   def play
     display_welcome_message
     loop do
@@ -222,18 +370,15 @@ class RPSGame
   private
 
   attr_accessor :human, :computer, :rounds_played
+  attr_reader :log
 
   WINNING_SCORE = 3
-
-  def initialize
-    @human = Human.new
-    @computer = Computer.new
-  end
 
   def display_welcome_message
     name_of_game = Move::VALUES.map(&:capitalize).join(', ')
     system('clear')
     puts "Hi #{human.name}! Welcome to #{name_of_game}!"
+    puts "(Enter 'log' at any time to view the log of moves)"
   end
 
   def display_goodbye_message
@@ -253,7 +398,7 @@ class RPSGame
     loop do
       self.rounds_played += 1
       puts "Round #{rounds_played}"
-      Round.new(human, computer).play
+      Round.new(human, computer, log).play
       break if winner?
     end
   end
@@ -274,6 +419,10 @@ class RPSGame
       puts "Would you like to play again? (y/n)"
       answer = gets.chomp
       break if ['y', 'n'].include? answer.downcase
+      if answer == 'log'
+        @log.display
+        next
+      end
       puts "Sorry, must be y or n."
     end
 
