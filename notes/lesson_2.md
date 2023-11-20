@@ -149,4 +149,3 @@ c = conditions
 `abc_size = Math.sqrt(a**2 + b**2 + c**2)`
 
 If the resulting value is greater than 18 (by default), Rubocop flags the method as too complex
-
