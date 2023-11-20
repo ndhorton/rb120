@@ -12,6 +12,7 @@ require 'yaml'
 #         for selecting robot choices rather than array constants and #sample
 #       Make sure you allow abbreviated input. Put that in the rules
 #       Need to have banner there at all times even when paging
+#       A robot HAS A personality, but then a robot IS A Computer Player
 
 module Colors
   BLACK = "\u001b[30m"
