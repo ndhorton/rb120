@@ -1,0 +1,38 @@
+# Rock, Paper, Scissors, Lizard, Spock
+# Outer map has keys to allow for expansion to other languages
+{
+  english: {
+    # Start of English language data
+    # Rules
+    rules: "
+Rock, Paper, Scissors, Lizard, Spock is an extended version of the\n
+classic game Rock, Paper, Scissors. Two players each choose moves\n
+from five possibilities -- Rock, Paper, Scissors, Lizard or Spock --\n
+and the following rules determine the winner:\n\n
+\t* Rock:\tblunts Scissors, and crushes Lizard\n
+\t* Paper:\twraps Rock, and disproves Spock\n
+\t* Scissors:\tcuts Paper, and decapitates Lizard\n
+\t* Lizard:\teats Paper, and poisons Spock\n
+\t* Spock:\tvaporizes Rock, and smashes Scissors\n\n
+If both players make the same move, the round is tied.\n\n
+Before playing, you will be asked to pick a winning number of\n
+points. For each round, the winning player scores a point; if\n
+the hand is tied, neither player scores a point. The winner\n
+of the game is the first player to reach the designated\n
+winning number of points.\n",
+    # Choosing moves
+    moves: [
+      rock, paper, scissors, lizard, spock,
+      ro, pa, sc, li, sp,
+      r, p, l,
+      history, help
+    ],
+    move_prompt: "Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
+    invalid_move: "Invalid choice. Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
+
+    # Making yes/no choices
+    yesno: ['yes', 'no', y, n],
+
+  # End of English language data
+  }
+}

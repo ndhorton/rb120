@@ -1,0 +1,18 @@
+Rock, Paper, Scissors, Lizard, Spock is an extended version of the
+classic game Rock, Paper, Scissors. Two players each choose moves 
+from five possibilities -- Rock, Paper, Scissors, Lizard or Spock --
+and the following rules determine the winner:
+
+    * Rock:     blunts Scissors, and crushes Lizard
+    * Paper:    wraps Rock, and disproves Spock
+    * Scissors: cuts Paper, and decapitates Lizard
+    * Lizard:   eats Paper, and poisons Spock
+    * Spock:    vaporizes Rock, and smashes Scissors
+
+If both players make the same move, the round is tied.
+
+Before playing, you will be asked to pick a winning number of
+points. For each round, the winning player scores a point; if
+the hand is tied, neither player scores a point. The winner
+of the game is the first player to reach the designated
+winning number of points.

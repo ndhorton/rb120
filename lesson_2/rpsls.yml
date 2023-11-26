@@ -1,0 +1,108 @@
+# Rock, Paper, Scissors, Lizard, Spock
+# Outer map has keys to allow for expansion to other languages
+{
+  english: {
+    # Start of English language data
+    # Banner
+    banner: "%{blue}
+    ********************************************\n
+    **%{reset}  %{yellow}Rock, Paper, Scissors, Lizard, Spock  %{blue}**\n
+    ********************************************%{reset}\n\n",
+    # Rules
+    rules: "
+    Rock, Paper, Scissors, Lizard, Spock is an extended version of the\n
+    classic game Rock, Paper, Scissors. Two players each choose moves\n
+    from five possibilities -- Rock, Paper, Scissors, Lizard or Spock --\n
+    and the following rules determine the winner:\n\n
+    \t* Rock:\tblunts Scissors, and crushes Lizard\n
+    \t* Paper:\twraps Rock, and disproves Spock\n
+    \t* Scissors:\tcuts Paper, and decapitates Lizard\n
+    \t* Lizard:\teats Paper, and poisons Spock\n
+    \t* Spock:\tvaporizes Rock, and smashes Scissors\n\n
+    If both players make the same move, the round is tied.\n\n
+    Before playing, you will be asked to pick a winning number of\n
+    points. For each round, the winning player scores a point; if\n
+    the hand is tied, neither player scores a point. The winner\n
+    of the game is the first player to reach the designated\n
+    winning number of points.",
+
+    # Moves
+    move_values: [rock, paper, scissors, lizard, spock],
+    rock: rock,
+    paper: paper,
+    scissors: scissors,
+    lizard: lizard,
+    spock: spock,
+
+    move_rules: {
+      rock: [scissors, lizard],
+      paper: [rock, spock],
+      scissors: [paper, lizard],
+      lizard: [paper, spock],
+      spock: [rock, scissors]
+    },
+
+    # Choosing moves
+    choose_moves: [
+      rock, paper, scissors, lizard, spock,
+      ro, pa, sc, li, sp,
+      r, p, l,
+      history, help
+    ],
+    move_prompt: "Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
+    invalid_move: "Invalid choice. Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
+    chose: " chose ",
+
+    # Winning/tie messages
+    player_won: "%{player} won!",
+    tie: "It's a tie!",
+    preamble_winner: "
+    At the end of %{rounds_played} rounds,\n
+    %{human_color}%{human_player}%{reset} has won %{human_score} rounds,\n
+    %{computer_color}%{computer_player}%{reset} has won %{computer_score} rounds,\n",
+    winner_is: " is the winner!",
+
+    # Making yes/no choices
+    yesno: ['yes', 'no', y, n],
+    invalid_choice: "Invalid choice. Player enter y or n.",
+    affirmative: 'y',
+
+    # Get player name
+    name: "Please enter your name: ",
+    invalid_name: "Sorry, must enter a value.",
+
+    # Pager and history log
+    pager_scroll: "%{yellow}[press <space> to scroll down, q to return to game]%{reset}",
+    pager_return:  "%{yellow}[press q to return to game]%{reset}",
+    no_moves: "No moves have been made yet.",
+    quit: q,
+    log_event: "
+    Hand %{hand_color}%{hand_number}%{reset}\n
+    %{human_color}%{human_player}%{reset}: %{human_move}\n
+    %{computer_color}%{computer_player}%{reset}: %{computer_move}\n\n",
+    history: history,
+
+    # Goodbye?
+    play_again: "Would like to play again (y or n)?",
+    goodbye: "Thanks for playing Rock, Paper, Scissors, Lizard, Spock. Good bye!",
+
+    # Robot personalities
+    personalities: {
+      opponent: "Hi, %{human_color}%{human_player}%{reset}! Your opponent today will be: %{computer_color}%{computer_player}%{reset}",
+      r2d2_bio: "
+      %{computer_color}R2D2%{reset} is a versatile utility droid, well-equiped to handle simple games,\n
+      or even something more advanced like Dejarik holochess. Unfortunaly,\n
+      this unit appears to be in need of maintenance...",
+      hal: "
+      %{computer_color}Hal%{reset} is a superintelligent general-purpose AI with a beautiful singing\n
+      voice. %{computer_color}Hal%{reset} is such a strong player some of his rivals have accused\n
+      him of cheating...",
+      chappie: "%{computer_color}Chappie%{reset}'s interests include Spock, and Spock lore...",
+      sonny: "%{computer_color}Sonny%{reset} is a strong, unpredicatable player...",
+      number_5: "%{computer_color}Number 5%{reset}'s moves are so difficult to predict that it\n
+      can sometimes seem like he's alive...",
+    },
+
+  # End of English language data
+  }
+}
