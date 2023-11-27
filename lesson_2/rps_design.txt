@@ -1,0 +1,168 @@
+IO Flow and its Relation to Classes, Modules, Scope etc
+=======================================================
+
+The idea for Displayable is that all methods that display
+output to the terminal will go here and they will all be
+private. Although this means that classes will have access
+to methods that will not work properly for their class,
+this access is private and so part of the implementation
+details. I don't really know if this is a good design,
+particularly if there is a large team of people working
+on a codebase, but it has the advantage of grouping all
+display methods in the same place rather than crowding
+the less easy-to-understand methods that contain the
+domain logic for the game within the classes themselves.
+
+My original idea was to nest the display methods in modules
+particular to their classes, and do something like 
+
+```ruby
+class Human < Player
+  include Display::Player
+  # ...
+end
+
+# ...
+
+class RPSGame
+  include Display::RPSGame
+  
+  # ...
+end
+```
+But I was unsure what naming conventions to use and wasn't
+sure if namespacing and mixins were meant to be combined like
+this, so I scrapped that idea and just added comments to group
+methods based on the class that makes proper use of them.
+
+module Displayable
+  private
+  ...
+end
+
+I think there should be a Pageable module and a Promptable module.
+The paging functionality is kind of generic, and it might be fairly
+easy to create generic logic for a prompt
+
+prompts:
+name - any characters but not zero characters or just spaces
+rules? - yes, no, y or n
+how many points needed to win? - number between 1 and 10
+[at any point after this, you should be able to type 'history' or 'help']
+move - move_prompt array, help, history
+play_again - yes, no, y or n, or history, or help
+
+Promptable
+needed by RPSGame and Human
+
+Pageable
+needed by RPSGame and Human
+
+The problem with asking for a name when you create the
+Human instance is that Human is currently instantiated
+before any other IO happens, so this means that you
+get asked for a name for anything else happens
+
+All you need to do, I think, is move the creating of Human
+to the setup method rather than th initialize method itself.
+
+Another pain point:
+when you return from paging the log or the rules,
+you should get the full prompt, e.g
+Round 5
+Choose (r)ock, (p)aper ...
+
+This is difficult because the round number is not
+passed to Human, where the choose method is.
+Not sure how you deal with this
+
+so if you have a loop in Human#choose
+
+So by using a recursive call at the end for log or history
+it should be fine as long as users don't ask to view 
+the log or the rules 8000+ times
+
+Human#choose(round)
+display_round(rounds)
+loop do
+  prompt for input
+  break if [valid moves]
+  error message
+end
+if input == 'history'
+  display_log
+  choose
+else if input == 'help'
+  display_rules
+  choose
+else
+  set move based on input
+
+The other problem, other than user-controlled
+recursion, is that you need to pass the instance
+variable from RPSGame to Human, which seems
+not very OOP. I don't know if there's some obvious
+solution I'm missing.
+
+Another option is to switch the recursion for
+a loop in the RPSGame
+
+RPSGame#play_rounds
+  reset_scores
+  display_banner
+  loop do
+    @rounds += 1
+    loop do
+        display_round
+        chosen = false
+        chosen = human_player.choose
+        break if chosen
+    end
+    break if winner?
+  end
+
+The problem with this is you have IO and setting
+instance variables in the object, and a meaningful return.
+This is almost certainly bad design but seems to have
+slightly fewer drawbacks:
+  no user-controlled recursion
+  no passing in an instance variable
+  vs
+  returns a meaningful value
+
+Actually, it can be solved by passing the log in to the
+Human object when instantiated, and then you have
+common methods for paging the log and paging
+the rules in the Displayable module
+The log also keeps track of the number of rounds
+and the number of events logged as well as
+keeping an array of the LogEvents themselves
+
+Maybe the log could also log the number of games played
+such that each LogEvent has
+
+event_number
+game_number
+round_number
+human_name
+human_move
+computer_name
+computer_move
+
+RPSGame#setup
+  display_banner
+  instantiate Human object
+  instantiate a random Computer opponent
+  personalized welcome and intro to opponent
+  see rules?
+  ask how many points needed to win
+  set_scores
+
+RPSGame#play
+  setup
+  do
+    reset_scores
+    play_rounds
+  while play_again?
+  goodbye
+end

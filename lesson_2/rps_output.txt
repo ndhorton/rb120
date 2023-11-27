@@ -1,0 +1,71 @@
+************************************************
+**    Rock, Paper, Scissors, Lizard, Spock    **
+************************************************
+
+Please enter your name:
+Nick
+
+Hi, Nick! Welcome to Rock, Paper, Scissors, Lizard, Spock!
+Your opponent today will be: Hal
+
+Would you like to see the rules?
+y
+Rock, Paper, Scissors, Lizard, Spock is an extended version of the
+...
+
+Please enter the number of points needed to win a game (1-10):
+3
+
+Round 1
+Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:
+r
+
+Nick chose rock
+Sonny chose scissors
+Nick won!
+
+...
+
+At the end of 8 rounds,
+Nick has won 2 rounds,
+Sonny has won 3 rounds,
+Sonny is the winner!
+
+Would you like to play again?
+history
+
+8
+Nick: paper
+Sonny: scissors
+
+7
+Nick: rock
+Sonny: rock
+
+....
+
+Would you like to play again (y or n)?
+y
+
+Round 1
+Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:
+history
+
+8
+Nick: paper
+Sonny: scissors
+
+7
+Nick: rock
+Sonny: rock
+
+....
+
+Round 1
+Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:
+help
+Rock, Paper, Scissors, Lizard, Spock is an extended version of the
+...
+
+Round 1
+...

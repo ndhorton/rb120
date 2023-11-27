@@ -8,16 +8,20 @@
     ********************************************\n
     **%{reset}  %{yellow}Rock, Paper, Scissors, Lizard, Spock  %{blue}**\n
     ********************************************%{reset}\n\n",
-    welcome: "Welcome to Rock, Paper, Scissors, Lizard, Spock!",
+    welcome: "Welcome to Rock, Paper, Scissors, Lizard, Spock!\n\n",
+    countdown: "Go!",
+    opponent: "Hi %{human_color}%{human_name}%{reset}! Your opponent today will be: %{computer_color}%{computer_player}%{reset}",
+    winning_points: "Choose how many points will win the game (1-10):",
+    invalid_points: "Invalid choice. Please choose 1-10:",
 
     # Rules
-    see_rules: "Would you like to see the rules (y or n)?"
+    rules_prompt: "Would you like to see the rules (y or n)?",
     rules: "
     Rock, Paper, Scissors, Lizard, Spock is an extended version of the\n
     classic game Rock, Paper, Scissors. Two players each choose moves\n
     from five possibilities -- Rock, Paper, Scissors, Lizard or Spock --\n
     and the following rules determine the winner:\n\n
-    \t* Rock:\tblunts Scissors, and crushes Lizard\n
+    \t* Rock:\t\tblunts Scissors, and crushes Lizard\n
     \t* Paper:\twraps Rock, and disproves Spock\n
     \t* Scissors:\tcuts Paper, and decapitates Lizard\n
     \t* Lizard:\teats Paper, and poisons Spock\n
@@ -29,8 +33,8 @@
     the game is the first player to reach the designated winning number\n
     of points.\n\n
     After you have chosen the number of winning points, you can view\n
-    these rules again by entering 'help' at any prompt. You can also\n",
-    view the log of past moves by entering 'history' at any prompt."
+    these rules again by entering 'help' at any prompt. You can also\n
+    view the log of past moves by entering 'history' at any prompt.",
 
     # Moves
     move_values: [rock, paper, scissors, lizard, spock],
@@ -50,15 +54,32 @@
 
     # Choosing moves
     round: "Round ", 
-    choose_moves: [
+    move_choices: [
       rock, paper, scissors, lizard, spock,
       ro, pa, sc, li, sp,
       r, p, l,
       history, help
     ],
+    move_abbreviations: {
+      rock: rock,
+      paper: paper,
+      scissors: scissors,
+      lizard: lizard,
+      spock: spock,
+      ro: rock,
+      pa: paper,
+      sc: scissors,
+      li: lizard,
+      sp: spock,
+      r: rock,
+      p: paper,
+      l: lizard
+    },
     move_prompt: "Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
     invalid_move: "Invalid choice. Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
     chose: " chose ",
+    history: "history",
+    help: "help",
 
     # Winning/tie messages
     player_won: "%{player} won!",
@@ -79,8 +100,8 @@
     invalid_name: "Sorry, must enter a value.",
 
     # Pager and history log
-    pager_scroll: "%{yellow}[press <space> to scroll down, q to return to game]%{reset}",
-    pager_return:  "%{yellow}[press q to return to game]%{reset}",
+    pager_scroll: "%{cyan}[press <space> to scroll down, q to return to game]%{reset}",
+    pager_return:  "%{cyan}[press q to return to game]%{reset}",
     no_moves: "No moves have been made yet.",
     quit: q,
     log_event: "
@@ -94,21 +115,21 @@
     goodbye: "Thanks for playing Rock, Paper, Scissors, Lizard, Spock. Good bye!",
 
     # Robot personalities
-    personalities: {
-      opponent: "Your opponent today will be: %{computer_color}%{computer_player}%{reset}",
-      r2d2_bio: "
-      %{computer_color}R2D2%{reset} is a versatile utility droid, well-equiped to handle simple games,\n
-      or even something more advanced like Dejarik holochess. Unfortunaly,\n
-      this unit appears to be in need of maintenance...",
-      hal: "
-      %{computer_color}Hal%{reset} is a superintelligent general-purpose AI with a beautiful singing\n
-      voice. %{computer_color}Hal%{reset} is such a strong player some of his rivals have accused\n
-      him of cheating...",
-      chappie: "%{computer_color}Chappie%{reset}'s interests include Spock, and Spock lore...",
-      sonny: "%{computer_color}Sonny%{reset} is a strong, unpredicatable player...",
-      number_5: "%{computer_color}Number 5%{reset}'s moves are so difficult to predict that it\n
-      can sometimes seem like he's alive...",
-    },
+    # personalities: {
+    #   opponent: "Your opponent today will be: %{computer_color}%{computer_player}%{reset}",
+    #   r2d2_bio: "
+    #   %{computer_color}R2D2%{reset} is a versatile utility droid, well-equiped to handle simple games,\n
+    #   or even something more advanced like Dejarik holochess. Unfortunaly,\n
+    #   this unit appears to be in need of maintenance...",
+    #   hal: "
+    #   %{computer_color}Hal%{reset} is a superintelligent general-purpose AI with a beautiful singing\n
+    #   voice. %{computer_color}Hal%{reset} is such a strong player some of his rivals have accused\n
+    #   him of cheating...",
+    #   chappie: "%{computer_color}Chappie%{reset}'s interests include Spock, and Spock lore...",
+    #   sonny: "%{computer_color}Sonny%{reset} is a strong, unpredicatable player...",
+    #   number_5: "%{computer_color}Number 5%{reset}'s moves are so difficult to predict that it\n
+    #   can sometimes seem like he's alive...",
+    # },
 
   # End of English language data
   }
