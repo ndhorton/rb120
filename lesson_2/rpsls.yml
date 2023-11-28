@@ -63,10 +63,10 @@
     # Winning/tie messages
     player_won: "%{player} won!",
     tie: "It's a tie!",
-    preamble_winner: "
-    At the end of %{rounds_played} rounds,\n
-    %{human_color}%{human_player}%{reset} has won %{human_score} rounds,\n
-    %{computer_color}%{computer_player}%{reset} has won %{computer_score} rounds,\n",
+    preamble_winner_singular: "
+    At the end of %{rounds_played} round,\n
+    %{human_color}%{human_player}%{reset} has scored %{human_score},\n
+    %{computer_color}%{computer_player}%{reset} has scored %{computer_score},\n",
     is_winner: " is the winner!",
 
     # Making yes/no choices

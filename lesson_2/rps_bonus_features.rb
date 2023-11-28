@@ -19,17 +19,6 @@ RESET = "\e[0m"
 module Displayable
   private
 
-  # Common methods
-  def display_appropriate_footer(max_y, text_size)
-    colors = { cyan: CYAN, reset: RESET }
-    puts
-    if max_y < text_size - 1
-      print format(TEXT['pager_scroll'], colors)
-    else
-      print format(TEXT['pager_return'], colors)
-    end
-  end
-
   def display_banner
     $stdout.clear_screen
     puts format(TEXT['banner'],
@@ -59,6 +48,24 @@ end
 module Winnable
   private
 
+  def display_round_winner
+    human_move = human.move
+    computer_move = computer.move
+    puts "\n#{GREEN}#{human.name}#{RESET}#{TEXT['chose']}#{human_move}\n" \
+         "#{RED}#{computer.name}#{RESET}#{TEXT['chose']}#{computer_move}\n"
+
+    if human_move == computer_move
+      puts TEXT['tie']
+    else
+      puts "#{round_winner_with_color}#{TEXT['is_winner']}\n\n"
+    end
+  end
+
+  def display_winner
+    puts format(preamble_text, game_winner_data)
+    puts "#{game_winner_with_color}#{TEXT['is_winner']}"
+  end
+
   def game_winner_data
     { rounds_played: log.round, human_color: GREEN, human_player: human.name,
       human_score: human.score, computer_color: RED,
@@ -74,22 +81,12 @@ module Winnable
     end
   end
 
-  def display_round_winner
-    human_move = human.move
-    computer_move = computer.move
-    puts "\n#{GREEN}#{human.name}#{RESET}#{TEXT['chose']}#{human_move}\n" \
-         "#{RED}#{computer.name}#{RESET}#{TEXT['chose']}#{computer_move}\n"
-
-    if human_move == computer_move
-      puts TEXT['tie']
+  def preamble_text
+    if log.round == 1
+      TEXT['preamble_winner_singular']
     else
-      puts "#{round_winner_with_color}#{TEXT['is_winner']}\n\n"
+      TEXT['preamble_winner_plural']
     end
-  end
-
-  def display_winner
-    puts format(TEXT['preamble_winner'], game_winner_data)
-    puts "#{game_winner_with_color}#{TEXT['is_winner']}"
   end
 
   def round_winner_with_color
@@ -152,26 +149,36 @@ end
 module Pageable
   private
 
-  def page(lines)
-    paging_loop(0, page_length, lines)
-    $stdout.clear_screen
+  def display_appropriate_footer(max_y, text_size)
+    colors = { cyan: CYAN, reset: RESET }
+    puts
+    if max_y < text_size - 1
+      print format(TEXT['pager_scroll'], colors)
+    else
+      print format(TEXT['pager_return'], colors)
+    end
   end
 
-  def page_content(start_y, max_y, lines)
+  def display_page(start_y, max_y, lines)
     $stdout.clear_screen
     display_banner
     display_lines(start_y, max_y, lines)
     display_appropriate_footer(max_y, lines.size)
   end
 
+  def page(lines)
+    paging_loop(0, page_length, lines)
+    $stdout.clear_screen
+  end
+
   def page_length
-    max_y, = $stdout.winsize # current size of terminal; only need rows/y axis
+    max_y, = $stdout.winsize # current size of terminal; only need rows (y axis)
     max_y - 7 # subtract 7 to accomodate header and footer
   end
 
   def paging_loop(start_y, max_y, lines)
     loop do
-      page_content(start_y, max_y, lines)
+      display_page(start_y, max_y, lines)
       input = $stdin.getch
       if input == ' ' && max_y < lines.size - 1
         start_y += 1
@@ -256,10 +263,12 @@ class Human < Player
   include Promptable
   include Pageable
 
+  # rubocop:disable Lint/MissingSuper
   def initialize(log)
     @log = log
     set_name
   end
+  # rubocop:enable Lint/MissingSuper
 
   def choose
     loop do
@@ -316,9 +325,11 @@ class Computer < Player
 end
 
 class R2D2 < Computer
+  # rubocop:disable Lint/MissingSuper
   def initialize
     self.name = 'R2D2'
   end
+  # rubocop:enable Lint/MissingSuper
 
   private
 
@@ -332,9 +343,11 @@ class R2D2 < Computer
 end
 
 class Hal < Computer
+  # rubocop:disable Lint/MissingSuper
   def initialize
     self.name = 'Hal'
   end
+  # rubocop:enable Lint/MissingSuper
 
   private
 
@@ -351,9 +364,11 @@ class Hal < Computer
 end
 
 class Sonny < Computer
+  # rubocop:disable Lint/MissingSuper
   def initialize
     self.name = 'Sonny'
   end
+  # rubocop:enable Lint/MissingSuper
 
   private
 
@@ -370,9 +385,11 @@ class Sonny < Computer
 end
 
 class Chappie < Computer
+  # rubocop:disable Lint/MissingSuper
   def initialize
     self.name = 'Chappie'
   end
+  # rubocop:enable Lint/MissingSuper
 
   private
 
@@ -389,9 +406,11 @@ class Chappie < Computer
 end
 
 class Number5 < Computer
+  # rubocop:disable Lint/MissingSuper
   def initialize
     self.name = 'Number 5'
   end
+  # rubocop:enable Lint/MissingSuper
 
   private
 
