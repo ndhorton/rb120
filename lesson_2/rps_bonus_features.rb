@@ -54,8 +54,11 @@ module Displayable
     rules_lines = TEXT['rules'].split("\n")
     page(rules_lines)
   end
+end
 
-  # RPSGame methods
+module Winnable
+  private
+
   def game_winner_data
     { rounds_played: log.round, human_color: GREEN, human_player: human.name,
       human_score: human.score, computer_color: RED,
@@ -435,6 +438,7 @@ class Move
 end
 
 class RPSGame
+  include Winnable
   include Displayable
   include Promptable
   include Pageable
