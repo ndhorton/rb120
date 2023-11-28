@@ -457,10 +457,10 @@ class Move
 end
 
 class RPSGame
-  include Winnable
   include Displayable
-  include Promptable
   include Pageable
+  include Promptable
+  include Winnable
 
   def initialize
     self.log = Log.new
