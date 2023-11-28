@@ -16,54 +16,12 @@ CYAN = "\e[36m"
 WHITE = "\e[37m"
 RESET = "\e[0m"
 
-
 module Displayable
-
   private
 
   # Common methods
-  def display_history
-    puts "display history"
-  end
-
-  def display_rules
-    rules_lines = TEXT['rules'].split("\n")
-    page(rules_lines)
-  end
-
-  def page(text)
-    start_y = 0
-    max_y = page_length
-    input = nil
-    loop do
-      $stdout.clear_screen
-      display_banner
-      display_lines(start_y, max_y, text)
-      display_appropriate_footer(max_y, text.size)
-      input = $stdin.getch
-      if input == ' '
-        start_y += 1 unless max_y >= text.size - 1
-        max_y += 1 unless max_y >= text.size - 1
-      elsif input == 'q'
-        break
-      end
-    end
-    $stdout.clear_screen
-  end
-
-  def page_length
-    max_y, = STDOUT.winsize
-    max_y - 7
-  end
-
-  def display_lines(start_y, max_y, text)
-    print YELLOW
-    puts text[start_y..max_y]
-    print RESET
-  end
-
   def display_appropriate_footer(max_y, text_size)
-    colors = {cyan: CYAN, reset: RESET}
+    colors = { cyan: CYAN, reset: RESET }
     puts
     if max_y < text_size - 1
       print format(TEXT['pager_scroll'], colors)
@@ -78,52 +36,95 @@ module Displayable
                 { blue: BLUE, yellow: YELLOW, reset: RESET })
   end
 
-  def display_countdown
-    # print "3"
-    # ellipsis
-    # print "2"
-    # ellipsis
-    # print "1"
-    # ellipsis
-    # puts TEXT['countdown']
-    # sleep 1
+  def display_history
+    log.display
   end
 
-  def ellipsis
-    3.times do
-      print "."
-      sleep 0.5
-    end
-    print " "
+  def display_lines(start_y, max_y, lines)
+    print YELLOW
+    puts lines[start_y..max_y]
+    print RESET
   end
 
   def display_round
-    puts "#{CYAN}#{TEXT['round']}#{log.rounds}#{RESET}"
+    puts "#{CYAN}#{TEXT['round']}#{log.round}#{RESET}"
+  end
+
+  def display_rules
+    rules_lines = TEXT['rules'].split("\n")
+    page(rules_lines)
   end
 
   # RPSGame methods
+  def game_winner_data
+    { rounds_played: log.round, human_color: GREEN, human_player: human.name,
+      human_score: human.score, computer_color: RED,
+      computer_player: computer.name, computer_score: computer.score,
+      reset: RESET }
+  end
+
+  def game_winner_with_color
+    if human.score > computer.score
+      "#{GREEN}#{human.name}#{RESET}"
+    else
+      "#{RED}#{computer.name}#{RESET}"
+    end
+  end
+
   def display_round_winner
+    human_move = human.move
+    computer_move = computer.move
+    puts "\n#{GREEN}#{human.name}#{RESET}#{TEXT['chose']}#{human_move}\n" \
+         "#{RED}#{computer.name}#{RESET}#{TEXT['chose']}#{computer_move}\n"
+
+    if human_move == computer_move
+      puts TEXT['tie']
+    else
+      puts "#{round_winner_with_color}#{TEXT['is_winner']}\n\n"
+    end
   end
 
   def display_winner
+    puts format(TEXT['preamble_winner'], game_winner_data)
+    puts "#{game_winner_with_color}#{TEXT['is_winner']}"
+  end
+
+  def round_winner_with_color
+    if human.move > computer.move
+      "#{GREEN}#{human.name}#{RESET}"
+    else
+      "#{RED}#{computer.name}#{RESET}"
+    end
   end
 end
 
 module Promptable
   private
 
-  def prompt_for_rules
-    puts TEXT['rules_prompt']
-    answer = get_rules_answer
-    if answer.start_with?(TEXT['affirmative'])
-      display_rules
-      display_banner
-    else
-      puts
+  def prompt_for_choice
+    choice = nil
+    puts TEXT['move_prompt']
+    loop do
+      choice = gets.chomp.strip.downcase
+      break if TEXT['move_choices'].include?(choice)
+      puts TEXT['invalid_move']
     end
+    choice
   end
 
-  def get_rules_answer
+  def prompt_for_play_again
+    puts TEXT['play_again']
+    answer = nil
+    loop do
+      answer = gets.chomp.strip.downcase
+      break if TEXT['yes_or_no_help_log'].include?(answer)
+      puts TEXT['invalid_choice']
+    end
+    answer
+  end
+
+  def prompt_for_rules
+    puts TEXT['rules_prompt']
     answer = nil
     loop do
       answer = gets.chomp.strip.downcase
@@ -141,36 +142,106 @@ module Promptable
       break if (1..10).cover?(points)
       puts TEXT['invalid_points']
     end
-    self.winning_points = points 
+    self.winning_points = points
+  end
+end
+
+module Pageable
+  private
+
+  def page(lines)
+    paging_loop(0, page_length, lines)
+    $stdout.clear_screen
   end
 
-  def prompt_for_choice
-    choice = nil
-    puts TEXT['move_prompt']
+  def page_content(start_y, max_y, lines)
+    $stdout.clear_screen
+    display_banner
+    display_lines(start_y, max_y, lines)
+    display_appropriate_footer(max_y, lines.size)
+  end
+
+  def page_length
+    max_y, = $stdout.winsize # current size of terminal; only need rows/y axis
+    max_y - 7 # subtract 7 to accomodate header and footer
+  end
+
+  def paging_loop(start_y, max_y, lines)
     loop do
-      choice = gets.chomp.strip.downcase
-      break if TEXT['move_choices'].include?(choice)
-      puts TEXT['invalid_move']
+      page_content(start_y, max_y, lines)
+      input = $stdin.getch
+      if input == ' ' && max_y < lines.size - 1
+        start_y += 1
+        max_y += 1
+      elsif input == TEXT['quit']
+        break
+      end
     end
-    choice
   end
 end
 
 class Log
-  attr_accessor :history, :rounds
+  include Pageable
+  include Displayable
+
+  attr_accessor :round, :game
+
+  @@event_number = 0
 
   def initialize
-    @history = [] # Array for LogEvents
+    @history = [] # array of LogEvents
+    @game = 0
     @rounds = 0
     @total_hands_played = 0
+  end
+
+  def add_event(human, computer)
+    @@event_number += 1
+    history << LogEvent.new(human, computer, @@event_number, @round, @game)
+  end
+
+  def display
+    if history.empty?
+      puts "No moves have been made yet.\n\n"
+    else
+      page(event_lines)
+    end
+  end
+
+  private
+
+  attr_accessor :history
+
+  def event_lines
+    text = history.reverse.join
+    text.split("\n")
   end
 end
 
 class LogEvent
+  attr_reader(:human_name, :human_move, :computer_name, :computer_move,
+              :event_number, :round, :game)
+
+  def initialize(human, computer, event_number, round, game)
+    @human_name = human.name
+    @human_move = human.move
+    @computer_name = computer.name
+    @computer_move = computer.move
+    @event_number = event_number
+    @round = round
+    @game = game
+  end
+
+  def to_s
+    "#{BLUE}Game #{game}#{RESET}, #{CYAN}Round #{round}#{RESET}\n" \
+      "#{GREEN}#{human_name}#{RESET}: #{human_move}\n" \
+      "#{RED}#{computer_name}#{RESET}: #{computer_move}\n\n"
+  end
 end
 
 class Player
   attr_reader :name, :move
+  attr_accessor :score
 
   private
 
@@ -180,6 +251,7 @@ end
 class Human < Player
   include Displayable
   include Promptable
+  include Pageable
 
   def initialize(log)
     @log = log
@@ -189,12 +261,9 @@ class Human < Player
   def choose
     loop do
       choice = prompt_for_choice
-      if choice == TEXT['history']
-        display_history
-        revert_display
-      elsif choice == TEXT['help']
-        display_rules
-        revert_display
+      case choice
+      when TEXT['history'] then handle_history
+      when TEXT['help']    then handle_rules
       else
         self.move = Move.new(expand_choice(choice))
         break
@@ -206,6 +275,25 @@ class Human < Player
 
   attr_reader :log
 
+  def expand_choice(choice)
+    TEXT['move_abbreviations'][choice]
+  end
+
+  def handle_history
+    display_history
+    revert_display
+  end
+
+  def handle_rules
+    display_rules
+    revert_display
+  end
+
+  def revert_display
+    display_banner
+    display_round
+  end
+
   def set_name
     n = ""
     loop do
@@ -215,15 +303,6 @@ class Human < Player
       puts TEXT['invalid_name']
     end
     self.name = n
-  end
-
-  def revert_display
-    display_banner
-    display_round
-  end
-
-  def expand_choice(choice)
-    TEXT['move_abbreviations'][choice]
   end
 end
 
@@ -243,11 +322,8 @@ class R2D2 < Computer
   def robot_choice
     random_number = rand(100)
     case random_number
-    when 0...20   then TEXT['rock']
-    when 20...40  then TEXT['paper']
-    when 40...60  then TEXT['scissors']
-    when 60...80  then TEXT['lizard']
-    when 80...100 then TEXT['spock']
+    when 0...99   then TEXT['rock']
+    when 99       then TEXT['spock']
     end
   end
 end
@@ -257,9 +333,9 @@ class Hal < Computer
     self.name = 'Hal'
   end
 
-   private
+  private
 
-   def robot_choice
+  def robot_choice
     random_number = rand(100)
     case random_number
     when 0...20   then TEXT['rock']
@@ -279,15 +355,15 @@ class Sonny < Computer
   private
 
   def robot_choice
-   random_number = rand(100)
-   case random_number
-   when 0...20   then TEXT['rock']
-   when 20...40  then TEXT['paper']
-   when 40...60  then TEXT['scissors']
-   when 60...80  then TEXT['lizard']
-   when 80...100 then TEXT['spock']
-   end
- end
+    random_number = rand(100)
+    case random_number
+    when 0...12   then TEXT['rock']
+    when 12...25  then TEXT['paper']
+    when 25...37  then TEXT['scissors']
+    when 37...50  then TEXT['lizard']
+    when 50...100 then TEXT['spock']
+    end
+  end
 end
 
 class Chappie < Computer
@@ -298,15 +374,15 @@ class Chappie < Computer
   private
 
   def robot_choice
-   random_number = rand(100)
-   case random_number
-   when 0...20   then TEXT['rock']
-   when 20...40  then TEXT['paper']
-   when 40...60  then TEXT['scissors']
-   when 60...80  then TEXT['lizard']
-   when 80...100 then TEXT['spock']
-   end
- end
+    random_number = rand(100)
+    case random_number
+    when 0...15   then TEXT['rock']
+    when 15...35  then TEXT['paper']
+    when 35...50  then TEXT['scissors']
+    when 50...85  then TEXT['lizard']
+    when 85...100 then TEXT['spock']
+    end
+  end
 end
 
 class Number5 < Computer
@@ -317,15 +393,15 @@ class Number5 < Computer
   private
 
   def robot_choice
-   random_number = rand(100)
-   case random_number
-   when 0...20   then TEXT['rock']
-   when 20...40  then TEXT['paper']
-   when 40...60  then TEXT['scissors']
-   when 60...80  then TEXT['lizard']
-   when 80...100 then TEXT['spock']
-   end
- end
+    random_number = rand(100)
+    case random_number
+    when 0...25   then TEXT['rock']
+    when 25...35  then TEXT['paper']
+    when 35...60  then TEXT['scissors']
+    when 60...85  then TEXT['lizard']
+    when 85...100 then TEXT['spock']
+    end
+  end
 end
 
 class Move
@@ -343,6 +419,10 @@ class Move
     rules(other.value).any? { |losing_move| @value == losing_move }
   end
 
+  def ==(other)
+    value == other.value
+  end
+
   def to_s
     value
   end
@@ -357,19 +437,18 @@ end
 class RPSGame
   include Displayable
   include Promptable
+  include Pageable
 
   def initialize
     self.log = Log.new
-    self.computer = set_computer_player
+    self.computer = select_computer_player
   end
 
   def play
     setup
     loop do
-      reset_scores
-      display_banner
-      play_round until winner?
-      display_winner
+      log.game += 1
+      play_all_rounds
       break unless play_again?
     end
     goodbye
@@ -379,18 +458,47 @@ class RPSGame
 
   attr_accessor :human, :computer, :log, :winning_points
 
-  def setup
+  def goodbye
+    $stdout.clear_screen
+    puts TEXT['goodbye']
+  end
+
+  def introduce_opponent
+    puts
+    puts format(TEXT['opponent'], {
+                  human_color: GREEN,
+                  computer_color: RED,
+                  reset: RESET,
+                  human_name: human.name,
+                  computer_player: computer.name
+                })
+  end
+
+  def log_moves
+    log.add_event(human, computer)
+  end
+
+  def play_again?
+    loop do
+      answer = prompt_for_play_again
+      case answer
+      when 'history' then display_history
+      when 'help'    then display_rules
+      else
+        return answer.start_with?(TEXT['affirmative'])
+      end
+    end
+  end
+
+  def play_all_rounds
+    reset_scores
     display_banner
-    puts TEXT['welcome']
-    self.human = Human.new(log)
-    make_introductions
-    prompt_for_rules
-    prompt_for_winning_points
-    display_countdown
+    play_round until winner?
+    display_winner
   end
 
   def play_round
-    log.rounds += 1
+    log.round += 1
     display_round
     human.choose
     computer.choose
@@ -400,19 +508,22 @@ class RPSGame
   end
 
   def reset_scores
-    log.rounds = 0
+    log.round = 0
+    human.score = 0
+    computer.score = 0
   end
 
-  def winner?
+  def rules_check
+    answer = prompt_for_rules
+    if answer.start_with?(TEXT['affirmative'])
+      display_rules
+      display_banner
+    else
+      puts
+    end
   end
 
-  def play_again?
-  end
-
-  def goodbye
-  end
-
-  def set_computer_player
+  def select_computer_player
     random_number = rand(100)
     case random_number
     when 0...20   then R2D2.new
@@ -423,19 +534,13 @@ class RPSGame
     end
   end
 
-  def make_introductions
-    puts
-    puts format(TEXT['opponent'], {
-      human_color: GREEN,
-      computer_color: RED,
-      reset: RESET,
-      human_name: human.name,
-      computer_player: computer.name
-    })
-  end
-
-  def log_moves
-    log.add_event(human.name, human.move, computer.name, computer.move)
+  def setup
+    display_banner
+    puts TEXT['welcome']
+    self.human = Human.new(log)
+    introduce_opponent
+    rules_check
+    prompt_for_winning_points
   end
 
   def update_scores
@@ -444,6 +549,11 @@ class RPSGame
     elsif human.move < computer.move
       computer.score += 1
     end
+  end
+
+  def winner?
+    (human.score >= winning_points) ||
+      (computer.score >= winning_points)
   end
 end
 
