@@ -102,7 +102,7 @@
     # Pager and history log
     pager_scroll: "%{cyan}[press <space> to scroll down, q to return to game]%{reset}",
     pager_return:  "%{cyan}[press q to return to game]%{reset}",
-    no_moves: "No moves have been made yet.",
+    no_moves: "No moves have been made yet.\n\n",
     quit: q,
     log_event: "
     Hand %{hand_color}%{hand_number}%{reset}\n

@@ -210,7 +210,7 @@ class Log
     if history.empty?
       $stdout.clear_screen
       display_banner
-      puts "No moves have been made yet.\n\n"
+      puts TEXT['no_moves']
       print format(TEXT['pager_return'], { cyan: CYAN, reset: RESET })
       $stdin.getch
       $stdout.clear_screen
