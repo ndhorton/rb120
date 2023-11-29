@@ -39,15 +39,6 @@ module Displayable
     puts "#{CYAN}#{TEXT['round']}#{log.round}#{RESET}"
   end
 
-  def display_rules
-    rules_lines = TEXT['rules'].split("\n")
-    page(rules_lines)
-  end
-end
-
-module Winnable
-  private
-
   def display_round_winner
     human_move = human.move
     computer_move = computer.move
@@ -59,6 +50,11 @@ module Winnable
     else
       puts "#{round_winner_with_color}#{TEXT['is_winner']}\n\n"
     end
+  end
+
+  def display_rules
+    rules_lines = TEXT['rules'].split("\n")
+    page(rules_lines)
   end
 
   def display_winner
@@ -191,8 +187,8 @@ module Pageable
 end
 
 class Log
-  include Pageable
   include Displayable
+  include Pageable
 
   attr_accessor :round, :game
 
@@ -212,7 +208,12 @@ class Log
 
   def display
     if history.empty?
+      $stdout.clear_screen
+      display_banner
       puts "No moves have been made yet.\n\n"
+      print format(TEXT['pager_return'], { cyan: CYAN, reset: RESET })
+      $stdin.getch
+      $stdout.clear_screen
     else
       page(event_lines)
     end
@@ -460,7 +461,6 @@ class RPSGame
   include Displayable
   include Pageable
   include Promptable
-  include Winnable
 
   def initialize
     self.log = Log.new
