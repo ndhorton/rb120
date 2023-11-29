@@ -506,8 +506,8 @@ class RPSGame
     loop do
       answer = prompt_for_play_again
       case answer
-      when 'history' then display_history
-      when 'help'    then display_rules
+      when TEXT['history'] then display_history
+      when TEXT['help']    then display_rules
       else
         return answer.start_with?(TEXT['affirmative'])
       end
