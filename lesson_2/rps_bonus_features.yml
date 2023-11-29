@@ -109,6 +109,8 @@
     %{human_color}%{human_player}%{reset}: %{human_move}\n
     %{computer_color}%{computer_player}%{reset}: %{computer_move}\n\n",
     history: history,
+    round_str: "Round",
+    game_str: "Game",
 
     # Goodbye?
     play_again: "Would you like to play again (y or n)?",

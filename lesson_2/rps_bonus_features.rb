@@ -244,7 +244,8 @@ class LogEvent
   end
 
   def to_s
-    "#{BLUE}Game #{game}#{RESET}, #{CYAN}Round #{round}#{RESET}\n" \
+    "#{BLUE}#{TEXT['game_str']} #{game}#{RESET}, " \
+      "#{CYAN}#{TEXT['round_str']} #{round}#{RESET}\n" \
       "#{GREEN}#{human_name}#{RESET}: #{human_move}\n" \
       "#{RED}#{computer_name}#{RESET}: #{computer_move}\n\n"
   end
