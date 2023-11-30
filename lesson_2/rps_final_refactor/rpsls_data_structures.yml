@@ -4,8 +4,17 @@
 # used in the logic of the program.
 {
   english: {
+    move_rules: {
+      rock: [scissors, lizard],
+      paper: [rock, spock],
+      scissors: [paper, lizard],
+      lizard: [paper, spock],
+      spock: [rock, scissors]
+    },
+
     move_values: [rock, paper, scissors, lizard, spock],
-      move_choices: [
+
+    move_choices: [
       rock, paper, scissors, lizard, spock,
       ro, pa, sc, li, sp,
       r, p, l,
