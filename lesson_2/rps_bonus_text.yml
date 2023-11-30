@@ -1,0 +1,98 @@
+# Rock, Paper, Scissors, Lizard, Spock
+# Outer map has keys to allow for expansion to other languages
+# Inner map values are string text needed for IO in the program
+{
+  english: {
+    # Start of English language data
+    # Welcome
+    banner: "%{blue}
+    ********************************************\n
+    **%{reset}  %{yellow}Rock, Paper, Scissors, Lizard, Spock  %{blue}**\n
+    ********************************************%{reset}\n\n",
+    welcome: "Welcome to Rock, Paper, Scissors, Lizard, Spock!\n\n",
+    countdown: "Go!",
+    opponent: "Hi %{human_color}%{human_name}%{reset}! Your opponent today will be: %{computer_color}%{computer_player}%{reset}",
+    winning_points: "Choose how many points will win the game (1-10):",
+    invalid_points: "Invalid choice. Please choose 1-10:",
+
+    # Rules
+    rules_prompt: "Would you like to see the rules (y or n)?",
+    rules: "
+    Rock, Paper, Scissors, Lizard, Spock is an extended version of the\n
+    classic game Rock, Paper, Scissors. Two players each choose moves\n
+    from five possibilities -- Rock, Paper, Scissors, Lizard or Spock --\n
+    and the following rules determine the winner:\n\n
+    \t* Rock:\t\tblunts Scissors, and crushes Lizard\n
+    \t* Paper:\twraps Rock, and disproves Spock\n
+    \t* Scissors:\tcuts Paper, and decapitates Lizard\n
+    \t* Lizard:\teats Paper, and poisons Spock\n
+    \t* Spock:\tvaporizes Rock, and smashes Scissors\n\n
+    If both players make the same move, the round is tied.\n\n
+    Before playing, you will be asked to pick a winning number of points\n
+    between 1 and 10. For each round, the winning player scores a point;\n
+    if the hand is tied, neither player scores a point. The winner of\n
+    the game is the first player to reach the designated winning number\n
+    of points.\n\n
+    After you have chosen the number of winning points, you can view\n
+    these rules again by entering 'help' at any prompt. You can also\n
+    view the log of past moves by entering 'history' at any prompt.",
+
+    # Moves
+    rock: rock,
+    paper: paper,
+    scissors: scissors,
+    lizard: lizard,
+    spock: spock,
+
+    move_rules: {
+      rock: [scissors, lizard],
+      paper: [rock, spock],
+      scissors: [paper, lizard],
+      lizard: [paper, spock],
+      spock: [rock, scissors]
+    },
+
+    # Choosing moves
+    round: "Round ", 
+    move_prompt: "Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
+    invalid_move: "Invalid choice. Please choose (r)ock, (p)aper, (sc)issors, (l)izard, or (sp)ock:",
+    history: "history",
+    help: "help",
+
+    # Winning/tie messages
+    chose: " chose ",
+    player_won: "%{player} won!",
+    tie: "It's a tie!\n\n",
+    preamble_winner_singular: "At the end of %{rounds_played} round,\n%{human_color}%{human_player}%{reset} has scored %{human_score},\n%{computer_color}%{computer_player}%{reset} has scored %{computer_score},\n",
+    preamble_winner_plural: "At the end of %{rounds_played} rounds,\n%{human_color}%{human_player}%{reset} has scored %{human_score},\n%{computer_color}%{computer_player}%{reset} has scored %{computer_score},\n",
+
+    is_winner: " is the winner!",
+
+    # Making yes/no choices
+    invalid_choice: "Invalid choice. Player enter y or n.",
+    affirmative: 'y',
+
+    # Get player name
+    name: "Please enter your name: ",
+    invalid_name: "Sorry, must enter a value.",
+
+    # Pager and history log
+    pager_scroll: "%{cyan}[press <space> to scroll down, q to return to game]%{reset}",
+    pager_return:  "%{cyan}[press q to return to game]%{reset}",
+    no_moves: "No moves have been made yet.\n\n",
+    quit: q,
+    log_event: "
+    Hand %{hand_color}%{hand_number}%{reset}\n
+    %{human_color}%{human_player}%{reset}: %{human_move}\n
+    %{computer_color}%{computer_player}%{reset}: %{computer_move}\n\n",
+    history: history,
+    round_str: "Round",
+    game_str: "Game",
+
+    # Goodbye?
+    play_again: "Would you like to play again (y or n)?",
+    goodbye: "Thanks for playing Rock, Paper, Scissors, Lizard, Spock. Good bye!",
+
+  # End of English language data
+  }
+}

@@ -1,0 +1,34 @@
+# Rock, Paper, Scissors, Lizard, Spock
+# Outer map has keys to allow for expansion to other languages
+# Inner map values are maps and sequences -> Ruby Hashes and Arrays
+# used in the logic of the program.
+{
+  english: {
+    move_values: [rock, paper, scissors, lizard, spock],
+      move_choices: [
+      rock, paper, scissors, lizard, spock,
+      ro, pa, sc, li, sp,
+      r, p, l,
+      history, help
+    ],
+
+    move_abbreviations: {
+      rock: rock,
+      paper: paper,
+      scissors: scissors,
+      lizard: lizard,
+      spock: spock,
+      ro: rock,
+      pa: paper,
+      sc: scissors,
+      li: lizard,
+      sp: spock,
+      r: rock,
+      p: paper,
+      l: lizard
+    },
+
+    yes_or_no: ['yes', 'no', 'y', 'n'],
+    yes_or_no_help_log: ['yes', 'no', 'y', 'n', 'help', 'history'],
+  }
+}
