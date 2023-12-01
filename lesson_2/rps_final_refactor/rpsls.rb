@@ -2,8 +2,9 @@ require 'psych'
 require 'io/console'
 
 # Load English language text from YAML file
-TEXT_DATA = Psych.load_file("#{__dir__}/rps_bonus_features.yml")
-TEXT = TEXT_DATA['english']
+TEXT = Psych.load_file("#{__dir__}/rpsls_text.yml")['english']
+# Load arrays and hashes containing English language text
+DATA = Psych.load_file("#{__dir__}/rpsls_data_structures.yml")['english']
 
 # Terminal Colors
 BLACK = "\e[30m"
@@ -22,7 +23,7 @@ module Promptable
     puts TEXT['move_prompt']
     loop do
       choice = gets.chomp.strip.downcase
-      break if TEXT['move_choices'].include?(choice)
+      break if DATA['move_choices'].include?(choice)
       puts TEXT['invalid_move']
     end
     choice
@@ -44,7 +45,7 @@ module Promptable
     answer = nil
     loop do
       answer = gets.chomp.strip.downcase
-      break if TEXT['yes_or_no_help_log'].include?(answer)
+      break if DATA['yes_or_no_help_log'].include?(answer)
       puts TEXT['invalid_choice']
     end
     answer
@@ -55,7 +56,7 @@ module Promptable
     answer = nil
     loop do
       answer = gets.chomp.strip.downcase
-      break if TEXT['yes_or_no'].include?(answer)
+      break if DATA['yes_or_no'].include?(answer)
       puts TEXT['invalid_choice']
     end
     answer
@@ -335,7 +336,7 @@ class Human < Player
   attr_reader :user_interface
 
   def expand_choice(choice)
-    TEXT['move_abbreviations'][choice]
+    DATA['move_abbreviations'][choice]
   end
 
   def set_name
@@ -477,7 +478,7 @@ class Move
   private
 
   def rules(value)
-    TEXT['move_rules'][value]
+    DATA['move_rules'][value]
   end
 end
 
