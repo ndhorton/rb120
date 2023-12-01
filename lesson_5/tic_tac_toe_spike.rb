@@ -1,21 +1,15 @@
 class Board
   def initialize
-    # we need some way to model the 3x3 grid. Maybe "squares"?
-    # what data structure should we use?
-    # - array/hash of Square objects?
-    # - array/hash of strings or integers?
   end
 end
 
 class Square
   def initialize
-    # maybe a "status" to keep track of this square's mark?
   end
 end
 
 class Player
   def initialize
-    # maybe a "marker" to keep track of this player's symbol (ie, 'X' or 'O')
   end
 
   def mark
@@ -38,7 +32,5 @@ class TTTGame
   end
 end
 
-# we'll kick off the game like this
 game = TTTGame.new
 game.play
-
