@@ -63,11 +63,11 @@ class Board
     'O'
   end
 
-  def score(game)
+  def score(game, depth)
     if game.winning_marker == computer_player
-      return 10
+      return 10 - depth
     elsif game.winning_marker == opposite_marker
-      return -10
+      return depth - 10
     else
       0
     end
@@ -84,19 +84,19 @@ class Board
   def get_new_state(move, game)
     new_state = Board.new(!active_turn)
     new_state.replace_state(game)
-    new_state[move] = (new_state.active_turn ? new_state.computer_player : new_state.opposite_marker)
+    new_state[move] = (active_turn ? computer_player : opposite_marker)
     new_state
   end
 
-  def minimax(game)
-    return score(game) if game.someone_won?
+  def minimax(game, depth = 1)
+    return score(game, depth) if game.someone_won?
     scores = []
     moves = []
 
     game.unmarked_keys.each do |move|
       possible_game = game.get_new_state(move, game)
  
-      scores << minimax(possible_game)
+      scores << minimax(possible_game, depth + 1)
       moves << move
     end
 
