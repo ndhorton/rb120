@@ -1,40 +1,30 @@
-# TODO: perhaps for 3) you could have three difiiculty levels, each with a different computer opponent
-# easy (random choice) could be a basic robot called... ?
-# medium: the offensive/defensive one-move-ahead from RB101
-# hard: the minimax algorithm
-
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                   [[1, 5, 9], [3, 5, 7]]              # diagonals
 
   def initialize
-    @squares = {}
+    @squares = [] # changed to array
     reset
   end
 
-  def []=(key, marker)
-    @squares[key].marker = marker
+  def []=(number, marker)
+    square(number).marker = marker # changed to convert number key to array index
   end
 
-  # rubocop:disable Metrics/AbcSize
-  # rubocop:disable Metrics/MethodLength
-  # Ok to disable these cops since this is a display method
   def draw
     puts "     |     |"
-    puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
+    puts "  #{square(1)}  |  #{square(2)}  |  #{square(3)}"
     puts "     |     |"
     puts "-----+-----+-----"
     puts "     |     |"
-    puts "  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}"
+    puts "  #{square(4)}  |  #{square(5)}  |  #{square(6)}"
     puts "     |     |"
     puts "-----+-----+-----"
     puts "     |     |"
-    puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}"
+    puts "  #{square(7)}  |  #{square(8)}  |  #{square(9)}"
     puts "     |     |"
   end
-  # rubocop:enable Metrics/AbcSize
-  # rubocop:enable Metrics/MethodLength
 
   def full?
     unmarked_keys.empty?
@@ -45,16 +35,17 @@ class Board
   end
 
   def reset
-    (1..9).each { |key| @squares[key] = Square.new }
+    (0..8).each { |number| @squares[number] = Square.new(number + 1) } # changed to array, added arg to Square.new
   end
 
   def unmarked_keys
-    @squares.keys.select { |key| @squares[key].unmarked? }
+    square_group = @squares.select { |current_square| current_square.unmarked? } # changed to reflect array
+    square_group.map(&:number)
   end
 
   def winning_marker
     WINNING_LINES.each do |line|
-      squares = @squares.values_at(*line)
+      squares = squares_at(line) # changed to custom method #squares_at
       if three_identical_markers?(squares)
         return squares.first.marker
       end
@@ -64,19 +55,30 @@ class Board
 
   private
 
+  def square(number) # added
+    @squares[number - 1]
+  end
+
+  def squares_at(numbers) # added
+    @squares.select { |current_square| numbers.include?(current_square.number) }
+  end
+
   def three_identical_markers?(squares)
     markers = squares.select(&:marked?).collect(&:marker)
     return false if markers.size != 3
     markers.min == markers.max
   end
+
 end
 
 class Square
   INITIAL_MARKER = ' '
 
   attr_accessor :marker
+  attr_reader :number    # added
 
-  def initialize
+  def initialize(number) # added knowldege of square number
+    @number = number
     @marker = INITIAL_MARKER
   end
 
@@ -116,13 +118,35 @@ class TTTGame
   def play
     clear
     display_welcome_message
-    main_game
+    loop do
+      display_board
+      loop do
+        current_player_moves
+        break if board.someone_won? || board.full?
+        clear_screen_and_display_board if human_turn?
+      end
+      display_result
+      break unless play_again?
+      reset
+      display_play_again_message
+    end
     display_goodbye_message
   end
 
   private
 
   attr_reader :board, :human, :computer
+
+  def human_moves
+    puts "Choose a square (#{board.unmarked_keys.join(', ')}): "
+    square = nil
+    loop do
+      square = gets.chomp.to_i
+      break if board.unmarked_keys.include?(square)
+      puts "Sorry, that's not a valid choice."
+    end
+    board[square] = human.marker
+  end
 
   def clear
     system('clear')
@@ -179,38 +203,8 @@ class TTTGame
     puts "Welcome to Tic Tac Toe!"
   end
 
-  def human_moves
-    puts "Choose a square (#{board.unmarked_keys.join(', ')}): "
-    square = nil
-    loop do
-      square = gets.chomp.to_i
-      break if board.unmarked_keys.include?(square)
-      puts "Sorry, that's not a valid choice."
-    end
-    board[square] = human.marker
-  end
-
   def human_turn?
     @current_marker == HUMAN_MARKER
-  end
-
-  def main_game
-    loop do
-      display_board
-      player_move
-      display_result
-      break unless play_again?
-      reset
-      display_play_again_message
-    end
-  end
-
-  def player_move
-    loop do
-      current_player_moves
-      break if board.someone_won? || board.full?
-      clear_screen_and_display_board if human_turn?
-    end
   end
 
   def play_again?
