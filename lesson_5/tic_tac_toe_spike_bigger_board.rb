@@ -1,21 +1,18 @@
-# TODO: perhaps for 3) you could have three difiiculty levels, each with a
-# different computer opponent
-# easy (random choice) could be a basic robot called... ?
-# medium: the offensive/defensive one-move-ahead from RB101
-# hard: the minimax algorithm
+# Think minimax implementation from other file might break with an arbitrarily
+# large board since it's recursive
 
 class Board
-  WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
-                  [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
-                  [[1, 5, 9], [3, 5, 7]]              # diagonals
-
   OPPOSITE_MARKER = {
     'X' => 'O',
     'O' => 'X'
   }
 
-  def initialize
+  # attr_reader :winning_lines
+
+  def initialize(length)
     @squares = {}
+    @length = length
+    set_winning_lines
     reset
   end
 
@@ -28,17 +25,18 @@ class Board
   # Ok to disable these cops since this is a simple display method -- reducing
   # the number of method calls will only make the code less legible
   def draw
-    puts "     |     |"
-    puts "  #{@squares[1]}  |  #{@squares[2]}  |  #{@squares[3]}"
-    puts "     |     |"
-    puts "-----+-----+-----"
-    puts "     |     |"
-    puts "  #{@squares[4]}  |  #{@squares[5]}  |  #{@squares[6]}"
-    puts "     |     |"
-    puts "-----+-----+-----"
-    puts "     |     |"
-    puts "  #{@squares[7]}  |  #{@squares[8]}  |  #{@squares[9]}"
-    puts "     |     |"
+    i = 0
+    (@length - 1).times do
+      puts "     |" * (@length - 1)
+      (@length - 1).times { print "  #{@squares[i += 1]}  |" }
+      print "  #{@squares[i += 1]}\n"
+      puts "     |" * (@length - 1)
+      puts "-----+" * (@length - 1) + ("-----")
+    end
+    puts "     |" * (@length - 1)
+    (@length - 1).times { print "  #{@squares[i += 1]}  |" }
+    print "  #{@squares[i += 1]}\n"
+    puts "     |" * (@length - 1)
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/MethodLength
@@ -47,14 +45,18 @@ class Board
     unmarked_keys.empty?
   end
 
+  def middle_square
+    (@length ** 2) / 2 + 1
+  end
+
   def middle_square_open?
-    @squares[5].unmarked?
+    @squares[(@length ** 2) / 2 + 1].unmarked?
   end
 
   def open_square(marker)
-    WINNING_LINES.each do |line|
+    @winning_lines.each do |line|
       markers = @squares.values_at(*line).map(&:marker)
-      if markers.count(marker) == 2 &&
+      if markers.count(marker) == (@length - 1) &&
          markers.count(OPPOSITE_MARKER[marker]) == 0
         empty_index = markers.index { |sq| sq != marker }
         return line[empty_index]
@@ -64,7 +66,25 @@ class Board
   end
 
   def reset
-    (1..9).each { |key| @squares[key] = Square.new }
+    (1..(@length ** 2)).each { |key| @squares[key] = Square.new }
+  end
+
+  def set_winning_lines
+    winning_lines = ([*(1..(@length ** 2))]).slice_when { |a, b| a % @length == 0}.to_a
+    winning_lines += winning_lines.transpose
+    
+    first_diagonal = [1]
+    i = 1
+    (@length - 1).times { first_diagonal << (i = i + @length + 1) }
+    winning_lines << first_diagonal
+
+    second_diagonal = [@length]
+    i = @length
+    (@length - 1).times { second_diagonal << (i = i + @length - 1) }
+    winning_lines << second_diagonal
+  
+    @winning_lines = winning_lines
+    winning_lines
   end
 
   def someone_won?
@@ -76,9 +96,9 @@ class Board
   end
 
   def winning_marker
-    WINNING_LINES.each do |line|
+    @winning_lines.each do |line|
       squares = @squares.values_at(*line)
-      if three_identical_markers?(squares)
+      if length_identical_markers?(squares)
         return squares.first.marker
       end
     end
@@ -87,9 +107,9 @@ class Board
 
   private
 
-  def three_identical_markers?(squares)
+  def length_identical_markers?(squares)
     markers = squares.select(&:marked?).collect(&:marker)
-    return false if markers.size != 3
+    return false if markers.size != @length
     markers.min == markers.max
   end
 end
@@ -129,7 +149,7 @@ class TTTGame
   COMPUTER_MARKER = "O"
 
   def initialize
-    @board = Board.new
+    @board = Board.new(11)
     @human = Player.new(HUMAN_MARKER)
     @computer = Player.new(COMPUTER_MARKER)
     @scores = {
@@ -159,21 +179,13 @@ class TTTGame
     display_board
   end
 
-  def immediate_win?
-    !!(board.open_square(computer.marker))
-  end
-
-  def immediate_threat?
-    !!(board.open_square(human.marker))
-  end
-
   def computer_moves
     if immediate_win?
       board[board.open_square(computer.marker)] = computer.marker
     elsif immediate_threat?
       board[board.open_square(human.marker)] = computer.marker
     elsif board.middle_square_open?
-      board[5] = computer.marker
+      board[board.middle_square] = computer.marker
     else
       board[board.unmarked_keys.sample] = computer.marker
     end
@@ -206,7 +218,7 @@ class TTTGame
   end
 
   def display_result
-    display_board
+    clear_screen_and_display_board
     case board.winning_marker
     when human.marker
       puts "You won!"
@@ -236,6 +248,14 @@ class TTTGame
     @current_marker == HUMAN_MARKER
   end
 
+  def immediate_win?
+    !!(board.open_square(computer.marker))
+  end
+
+  def immediate_threat?
+    !!(board.open_square(human.marker))
+  end
+
   def joinor(array, delimiter = ', ', conjunction = 'or')
     case array.size
     when 0 then ""
@@ -248,6 +268,7 @@ class TTTGame
   end
 
   def main_game
+    clear
     loop do
       display_board
       player_move
