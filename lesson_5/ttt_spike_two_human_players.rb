@@ -145,16 +145,19 @@ class Player
 end
 
 class TTTGame
-  HUMAN_MARKER = "X"
+  HUMAN_MARKER1 = "X"
+  HUMAN_MARKER2 = "Y"
   COMPUTER_MARKER = "O"
-  BOARD_SIZE = 5 # can be resized arbitrarily
+  BOARD_SIZE = 4 # can be resized arbitrarily
 
   def initialize
     @board = Board.new(BOARD_SIZE)
-    @human = Player.new(HUMAN_MARKER)
+    @human1 = Player.new(HUMAN_MARKER1)
+    @human2 = Player.new(HUMAN_MARKER2)
     @computer = Player.new(COMPUTER_MARKER)
     @scores = {
-      human: 0,
+      human1: 0,
+      human2: 0,
       computer: 0
     }
   end
@@ -169,7 +172,7 @@ class TTTGame
 
   private
 
-  attr_reader :board, :human, :computer
+  attr_reader :board, :human1, :human2, :computer
 
   def clear
     system('clear')
@@ -181,10 +184,17 @@ class TTTGame
   end
 
   def computer_moves
+    choices = [human1, human2]
+    player_a = choices.shuffle.pop
+    player_b = choices.shuffle.pop
     if immediate_win?
       board[board.open_square(computer.marker)] = computer.marker
     elsif immediate_threat?
-      board[board.open_square(human.marker)] = computer.marker
+      if board.open_square(player_a.marker)
+        board[board.open_square(player_a.marker)] = computer.marker
+      else
+        board[board.open_square(player_b.marker)] = computer.marker
+      end
     elsif board.middle_square_open?
       board[board.middle_square] = computer.marker
     else
@@ -194,16 +204,20 @@ class TTTGame
 
   def current_player_moves
     if human_turn?
-      human_moves
+      human_moves(human1)
+      @current_marker = HUMAN_MARKER2
+      clear_screen_and_display_board
+      human_moves(human2)
       @current_marker = COMPUTER_MARKER
     else
       computer_moves
-      @current_marker = HUMAN_MARKER
+      @current_marker = HUMAN_MARKER1
     end
   end
 
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "Player 1 is #{HUMAN_MARKER1}. Player 2 is #{HUMAN_MARKER2}" \
+         " Computer is a #{computer.marker}."
     puts ""
     board.draw
     puts ""
@@ -221,8 +235,10 @@ class TTTGame
   def display_result
     clear_screen_and_display_board
     case board.winning_marker
-    when human.marker
-      puts "You won!"
+    when HUMAN_MARKER1
+      puts "Player 1 won!"
+    when HUMAN_MARKER2
+      puts "Player 2 won!"
     when computer.marker
       puts "Computer won!"
     else
@@ -234,19 +250,23 @@ class TTTGame
     puts "Welcome to Tic Tac Toe!"
   end
 
-  def human_moves
-    puts "Choose a square (#{joinor(board.unmarked_keys)}): "
+  def human_moves(player)
+    return if board.full?
+    player_number = (player.marker == HUMAN_MARKER1 ? '1' : '2')
+
+    puts "Choose a square, Player #{player_number}, " \
+         "(#{joinor(board.unmarked_keys)}): "
     square = nil
     loop do
       square = gets.chomp.to_i
       break if board.unmarked_keys.include?(square)
       puts "Sorry, that's not a valid choice."
     end
-    board[square] = human.marker
+    board[square] = player.marker
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @current_marker == HUMAN_MARKER1 || @current_marker == HUMAN_MARKER2
   end
 
   def immediate_win?
@@ -254,7 +274,11 @@ class TTTGame
   end
 
   def immediate_threat?
-    !!(board.open_square(human.marker))
+    choices = [human1, human2]
+    player_a = choices.shuffle.pop
+    player_b = choices.shuffle.pop
+    !!(board.open_square(player_a.marker) ||
+       board.open_square(player_b.marker))
   end
 
   def joinor(array, delimiter = ', ', conjunction = 'or')
@@ -318,7 +342,7 @@ class TTTGame
   end
 
   def prompt_for_who_goes_first
-    puts "Would you like to go first (y or n)?"
+    puts "Should the humans go first (y or n)?"
     answer = ''
     loop do
       answer = gets.chomp.strip.downcase
@@ -342,7 +366,8 @@ class TTTGame
 
   def update_scores
     case board.winning_marker
-    when HUMAN_MARKER    then @scores[:human] += 1
+    when HUMAN_MARKER1    then @scores[:human1] += 1
+    when HUMAN_MARKER2    then @scores[:human2] += 1
     when COMPUTER_MARKER then @scores[:computer] += 1
     end
   end

@@ -1,11 +1,8 @@
-# Think minimax implementation from other file might break with an arbitrarily
-# large board since it's recursive
-
 class Board
-  # OPPOSITE_MARKER = {
-  #   'X' => 'O',
-  #   'O' => 'X'
-  # }
+  OPPOSITE_MARKER = {
+    'X' => 'O',
+    'O' => 'X'
+  }
 
   # attr_reader :winning_lines
 
@@ -146,16 +143,18 @@ end
 
 class TTTGame
   HUMAN_MARKER = "X"
-  COMPUTER_MARKER = "O"
-  BOARD_SIZE = 5 # can be resized arbitrarily
+  COMPUTER1_MARKER = "O"
+  COMPUTER2_MARKER = "P"
 
   def initialize
-    @board = Board.new(BOARD_SIZE)
+    @board = Board.new(5)
     @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
+    @computer1 = Player.new(COMPUTER1_MARKER)
+    @computer2 = Player.new(COMPUTER2_MARKER)
     @scores = {
       human: 0,
-      computer: 0
+      computer1: 0,
+      computer2: 0
     }
   end
 
@@ -169,7 +168,7 @@ class TTTGame
 
   private
 
-  attr_reader :board, :human, :computer
+  attr_reader :board, :human, :computer1, :computer2
 
   def clear
     system('clear')
@@ -180,10 +179,18 @@ class TTTGame
     display_board
   end
 
-  def computer_moves
-    if immediate_win?
+  def computer_moves(computer)
+    return if board.full?
+    other_computer = if (computer.marker == COMPUTER1_MARKER)
+                       computer2
+                     else
+                       computer1
+                     end
+    if immediate_win?(computer)
       board[board.open_square(computer.marker)] = computer.marker
-    elsif immediate_threat?
+    elsif immediate_threat?(other_computer)
+      board[board.open_square(other_computer.marker)] = computer.marker
+    elsif immediate_threat?(human)
       board[board.open_square(human.marker)] = computer.marker
     elsif board.middle_square_open?
       board[board.middle_square] = computer.marker
@@ -195,15 +202,18 @@ class TTTGame
   def current_player_moves
     if human_turn?
       human_moves
-      @current_marker = COMPUTER_MARKER
+      @current_marker = COMPUTER1_MARKER
     else
-      computer_moves
+      computer_moves(@computer1)
+      @current_marker = COMPUTER2_MARKER
+      computer_moves(@computer2)
       @current_marker = HUMAN_MARKER
     end
   end
 
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "You're #{human.marker}. Computer 1 is #{computer1.marker}. " \
+         "Computer 2 is #{computer2.marker}"
     puts ""
     board.draw
     puts ""
@@ -223,8 +233,10 @@ class TTTGame
     case board.winning_marker
     when human.marker
       puts "You won!"
-    when computer.marker
-      puts "Computer won!"
+    when computer1.marker
+      puts "Computer 1 won!"
+    when computer2.marker
+      puts "Computer 2 won!"
     else
       puts "It's a tie!"
     end
@@ -249,12 +261,12 @@ class TTTGame
     @current_marker == HUMAN_MARKER
   end
 
-  def immediate_win?
+  def immediate_win?(computer)
     !!(board.open_square(computer.marker))
   end
 
-  def immediate_threat?
-    !!(board.open_square(human.marker))
+  def immediate_threat?(player)
+    !!(board.open_square(player.marker))
   end
 
   def joinor(array, delimiter = ', ', conjunction = 'or')
@@ -330,20 +342,21 @@ class TTTGame
 
   def set_who_goes_first
     if prompt_for_computer_chooses == 'y'
-      @current_marker = ['O', 'X', 'O'].sample
+      @current_marker = ['O', 'X', 'P'].sample
       return
     end
     if prompt_for_who_goes_first == 'y'
       @current_marker = 'X'
     else
-      @current_marker = 'O'
+      @current_marker = ['O', 'P'].sample
     end
   end
 
   def update_scores
     case board.winning_marker
-    when HUMAN_MARKER    then @scores[:human] += 1
-    when COMPUTER_MARKER then @scores[:computer] += 1
+    when HUMAN_MARKER     then @scores[:human] += 1
+    when COMPUTER1_MARKER then @scores[:computer1] += 1
+    when COMPUTER2_MARKER then @scores[:computer2] += 1
     end
   end
 end
