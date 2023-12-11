@@ -117,21 +117,15 @@ class Square
 end
 
 class Player
-  attr_reader :marker
-
-  def initialize(marker)
-    @marker = marker
-  end
+  attr_accessor :marker, :name
 end
 
 class TTTGame
-  HUMAN_MARKER = "X"
-  COMPUTER_MARKER = "O"
-
   def initialize
     @board = Board.new
-    @human = Player.new(HUMAN_MARKER)
-    @computer = Player.new(COMPUTER_MARKER)
+    @human = Player.new
+    @computer = Player.new
+    computer.name = ['R2D2', 'Roy', 'Hal'].sample
     @scores = {
       human: 0,
       computer: 0
@@ -141,7 +135,8 @@ class TTTGame
   def play
     clear
     display_welcome_message
-    set_who_goes_first
+    ask_player_for_name
+    determine_player_order
     main_game
     display_goodbye_message
   end
@@ -149,6 +144,33 @@ class TTTGame
   private
 
   attr_reader :board, :human, :computer
+
+  def ask_player_for_name
+    name = ''
+    puts "Please enter your name:"
+    loop do
+      name = gets.chomp.strip
+      break unless name.empty?
+    end
+    human.name = name
+  end
+
+  def determine_player_order
+    set_who_goes_first
+    set_player_marker
+  end
+
+  def set_player_marker
+    answer = prompt_for_player_marker
+    case answer
+    when 'X'
+      human.marker = 'X'
+      computer.marker = 'O'
+    when 'O'
+      human.marker = 'O'
+      computer.marker = 'X'
+    end
+  end
 
   def clear
     system('clear')
@@ -182,15 +204,16 @@ class TTTGame
   def current_player_moves
     if human_turn?
       human_moves
-      @current_marker = COMPUTER_MARKER
+      @current_player = computer
     else
       computer_moves
-      @current_marker = HUMAN_MARKER
+      @current_player = human
     end
   end
 
   def display_board
-    puts "You're a #{human.marker}. Computer is a #{computer.marker}."
+    puts "#{human.name} is #{human.marker}. " \
+         "#{computer.name} is #{computer.marker}."
     puts ""
     board.draw
     puts ""
@@ -233,7 +256,7 @@ class TTTGame
   end
 
   def human_turn?
-    @current_marker == HUMAN_MARKER
+    @current_player == human
   end
 
   def joinor(array, delimiter = ', ', conjunction = 'or')
@@ -281,7 +304,7 @@ class TTTGame
 
   def reset
     board.reset
-    set_who_goes_first
+    determine_player_order
   end
 
   def prompt_for_computer_chooses
@@ -291,6 +314,17 @@ class TTTGame
       answer = gets.chomp.strip.downcase
       break if ['y', 'n'].include?(answer)
       puts "Sorry, must be y or n"
+    end
+    answer
+  end
+
+  def prompt_for_player_marker
+    puts "Would you like your marker to be 'X' or 'O'?"
+    answer = ''
+    loop do
+      answer = gets.chomp.strip.upcase
+      break if ['X', 'O'].include?(answer)
+      puts "Sorry, must be 'X' or 'O'"
     end
     answer
   end
@@ -308,20 +342,20 @@ class TTTGame
 
   def set_who_goes_first
     if prompt_for_computer_chooses == 'y'
-      @current_marker = ['O', 'X', 'O'].sample
+      @current_player = [human, computer].sample
       return
     end
     if prompt_for_who_goes_first == 'y'
-      @current_marker = 'X'
+      @current_player = human
     else
-      @current_marker = 'O'
+      @current_player = computer
     end
   end
 
   def update_scores
     case board.winning_marker
-    when HUMAN_MARKER    then @scores[:human] += 1
-    when COMPUTER_MARKER then @scores[:computer] += 1
+    when human.marker    then @scores[:human] += 1
+    when computer.marker then @scores[:computer] += 1
     end
   end
 end

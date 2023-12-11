@@ -1,2 +1,1 @@
-game = TTTGame.new
-game.play
+c

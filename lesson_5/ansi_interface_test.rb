@@ -161,11 +161,11 @@ class TTTGame
         break if @ui.read_input == :quit
       end
     ensure
-      teardown
+      revert_terminal
     end
   end
 
-  def teardown
+  def revert_terminal
     system('tput cnorm')
     $stdin.echo = true
     @ui.set_pos(1, 12)
