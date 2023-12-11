@@ -1,0 +1,119 @@
+1)
+
+generics:
+
+prompt method (message, error_message, acceptable_inputs) -> validated_input
+all arguments would be from YAML
+downside of this is that you would need some kind of function object
+passed as well thinking about it.
+You need to call e.g. downcase on some inputs while on others
+you need to call e.g. strip but not downcase
+so you could do something like
+```ruby
+process_input = Proc.new { |user_input| user_input.strip }
+user_interface.prompt(TEXT['name_message'], TEXT['name_error'], nil, process_input )
+```
+This raises another problem
+The `nil` above signifies that any input is viable (since I happened to choose the
+name prompt as an example). For the name prompt any input is valid as long
+as it is not empty after having whitespace stripped from its ends.
+There's no easy way to have the same method both enforce an array of viable
+inputs or simply check for the size being > 0, so you would either need a Proc
+again or if using `nil` as above, then something like
+```ruby
+if acceptable_inputs
+  break if acceptable_inputs.include?(answer)
+else
+  break unless answer.empty?
+end
+```
+which seems very ugly
+
+So if not `prompt` it's hard to know what candidates there would be for a module
+of shared behaviors in such a small program
+
+TTTGame - orchestration class
+contains logicical flow of game
+tracks state related to games won, lost or tied
+can play out the game of TTT
+can keep scores of wins and ties
+needs access to Players
+needs access to Board
+needs access to UserInterface
+
+UserInterface
+contains logic for output and input
+needs access to Board (to display board state)
+can draw_board
+needs access to Cursor
+can draw_cursor
+
+Board
+contains current individual game state
+- hash containing Squares
+~~needs access to Players (for markers) ?~~
+
+Square
+knows INITIAL_MARKER
+knows if it is unmarked? 
+stores marker
+
+The trouble with the square interpreting anything more than whether
+it is unmarked is that Square stores variable markers but also
+you are asking it to interpret variable markers
+So you'd have to either pass in `human.marker, computer.marker` when
+each Square is created so that it knows how to interpret them, or have
+a double operation to set a square to a certain state, like
+```ruby
+square.marker = human.marker
+square.mark = :human
+```
+or something like that
+so better to let it be simpler. But then is it encapsulating anything useful
+with such limited functionality?
+
+It might be better to move the interpretation of markers back
+to TTTGame.
+Then Board could interpret winner etc generically (does any single marker
+occupy 3 squares of a winning line?) etc
+
+
+Player
+knows player's marker
+knows player's name
+
+Human < Player
+can set player's marker
+can set player's name
+
+R2D2 < Player
+can set player's name to 'R2D2'
+easy opponent class
+can choose a move at random
+
+Hal < Player
+can set player's name to 'Hal'
+- medium opponent class
+can choose a move based on offense, defense, middle square, random
+
+Roy < Player
+can set player's name to 'Roy'
+- hard opponent class
+can choose a move based on the minimax algorithm
+
+When the human player needs to make a move
+we need the UserInterface to allow them to pick a square and return it
+then we need to mark that square on the `board` with `human.marker`
+This should probably be orchestrated from TTTGame
+So something like
+```ruby
+ui.draw_board
+square = user_interface.choose_square
+board[square] = human.marker
+```
+
+When the computer player needs to make a move, we need to pass the current
+`board` state to `computer.choose(board)` and it will return a square number
+We then need to mark that square on the `board` with `computer.marker`
+So the Player subclass for that computer player needs to have a unique
+`#choose(board_state)` method but it just returns a square number to TTTGame

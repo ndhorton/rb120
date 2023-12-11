@@ -1,4 +1,8 @@
 require 'io/console'
+require 'psych'
+require 'pty'
+
+TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
 
 module Colors
   FG_BLACK = "\e[30m"
@@ -16,28 +20,14 @@ class UserInterface
     [3, 10], [9, 10], [15, 10]
   ]
 
-  BOARD_SKELETON = "" \
-  "     |     |\n" \
-  "     |     |\n" \
-  "     |     |\n" \
-  "-----+-----+-----\n" \
-  "     |     |\n" \
-  "     |     |\n" \
-  "     |     |\n" \
-  "-----+-----+-----\n" \
-  "     |     |\n" \
-  "     |     |\n" \
-  "     |     |\n"
-
   attr_accessor :x, :y
-  attr_reader :board_state
 
   def initialize
     system('tput civis')
     $stdout.clear_screen
     @x = 1
     @y = 1
-    @board_state = Board.new
+
     @cursor = Cursor.new
   end
 
@@ -50,23 +40,33 @@ class UserInterface
 
   def draw_skeleton
     set_pos(1, 1)
-    print_string(BOARD_SKELETON)
+    print_string(Board::SKELETON)
+
+    set_pos(1, 13)
+    puts "k/j - up/down, h/l - left/right, <space> to mark a square"
+    set_pos(1, 14)
+    puts "q to quit at any time"
+  end
+
+  def draw_cursor(board_state)
+    set_pos(@cursor.x, @cursor.y)
+    print_char("#{FG_BLACK}#{BG_WHITE}#{board_state[@cursor.square_index]}#{RESET}")
+    set_pos(1, 15) # in case `tput civis` fails to hide console cursor 
+  end
+
+  def draw_squares(board_state)
     SQUARE_POSITIONS.each_with_index do |(x, y), index|
       set_pos(x, y)
       print_char(board_state[index])
     end
   end
 
-  def draw_cursor
-    set_pos(@cursor.x, @cursor.y)
-    print_char("#{FG_BLACK}#{BG_WHITE}#{board_state[@cursor.square_index]}#{RESET}")
-  end
-
-  def draw_board
+  def draw_board(board_state)
     # clear_board(board_state)
     $stdout.clear_screen
     draw_skeleton
-    draw_cursor    
+    draw_squares(board_state)
+    draw_cursor(board_state)
   end
 
   def print_char(char)
@@ -91,14 +91,15 @@ class UserInterface
 
   def read_input
     ch = $stdin.getch
-    case ch
+    case ch.downcase
     when 'h' then @cursor.x -= 6 unless @cursor.x == 3
     when 'j' then @cursor.y += 4 unless @cursor.y == 10
     when 'k' then @cursor.y -= 4 unless @cursor.y == 2
     when 'l' then @cursor.x += 6 unless @cursor.x == 15
-    when ' ' then mark_square
-    when 'q' then :quit
+    when ' ' then return @cursor.square_index
+    when 'q' then return :quit
     end
+    nil
   end
 
   def set_pos(x, y)
@@ -134,6 +135,7 @@ class Board
   INITIAL_MARKER = ' '
   PLAYER1 = 'X'
   PLAYER2 = 'O'
+  SKELETON = TEXT['board_skeleton'].join.freeze
 
   def initialize
     @squares = []
@@ -151,15 +153,27 @@ end
 
 
 class TTTGame
+  attr_reader :board
+
+  def initialize
+    @board = Board.new
+  end
+
   def play
     begin
       @ui = UserInterface.new
       $stdin.echo = false
-      system('tput civis')
+      # system('tput civis')
       loop do
-        @ui.draw_board
-        break if @ui.read_input == :quit
+        @ui.draw_board(board)
+        move = @ui.read_input 
+        break if move == :quit
+        if move
+          board[move] = 'X'
+          # break
+        end
       end
+      $stdout.clear_screen
     ensure
       revert_terminal
     end
@@ -168,7 +182,7 @@ class TTTGame
   def revert_terminal
     system('tput cnorm')
     $stdin.echo = true
-    @ui.set_pos(1, 12)
+    # @ui.set_pos(1, 12)
   end
 end
 
