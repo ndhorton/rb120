@@ -5,12 +5,15 @@ TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
 
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
-  [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
-  [[1, 5, 9], [3, 5, 7]]              # diagonals
+                  [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
+                  [[1, 5, 9], [3, 5, 7]]              # diagonals
 
-  attr_reader :human_marker, :computer_marker, :active_turn
+  attr_reader :computer_active
+  attr_accessor :human_marker, :computer_marker, :active_turn
 
-  def initialize
+  def initialize(comp_act = false)
+    @computer_active = comp_act
+    set_active_player
     @squares = {}
     reset_squares
   end
@@ -24,6 +27,7 @@ class Board
   end
 
   def computer_won?
+    winning_marker == computer_marker
   end
 
   def empty_squares
@@ -31,16 +35,32 @@ class Board
   end
 
   def end_state?
+    human_won? || computer_won? || full?
+  end
+
+  def full?
+    empty_squares.empty?
   end
 
   def human_turn?
-    acitve_turn == :human
+    active_turn == :human
   end
 
   def human_won?
+    winning_marker == human_marker
   end
 
   def new_state(square)
+    state = Board.new(!computer_active)
+    state.squares = @squares.map { |k, v| [k, v.dup] }.to_h
+    state[square] = (human_turn? ? human_marker : computer_marker)
+    state.human_marker = human_marker
+    state.computer_marker = computer_marker
+    state
+  end
+
+  def tie?
+    full? && !(human_won?) && !(computer_won?)
   end
 
   def winning_marker
@@ -53,10 +73,24 @@ class Board
     nil
   end
 
+  protected
+
+  def squares=(squares)
+    @squares = squares
+  end
+
   private
 
   def reset_squares
     (1..9).each { |key| @squares[key] = Square.new }
+  end
+
+  def set_active_player
+    if computer_active
+      @active_turn = :computer
+    else
+      @active_turn = :human
+    end
   end
 
   def three_identical_markers?(squares)
@@ -74,11 +108,11 @@ class Cursor
   end
 
   def reset
-    @x, @y = UserInterface::SQUARE_POSITIONS[4] # middle square position
+    @x, @y = UserInterface::SQUARE_POSITIONS[5] # middle square position
   end
 
   def square
-    UserInterface::SQUARE_POSITIONS.index([x, y]) + 1 # index to key offset
+    UserInterface::SQUARE_POSITIONS.key([x, y])
   end
 end
 
@@ -97,9 +131,10 @@ class R2D2 < Player
   end
 
   def choose_square(board)
-    board.active_turn = :human
+    # board.active_turn = :human
     board.empty_squares.sample
-  endend
+  end
+end
 
 class Hal < Player
   def initialize
@@ -107,7 +142,7 @@ class Hal < Player
   end
 
   def choose(board)
-    board.active_turn = :human
+    # board.active_turn = :human
     computer_marker = board.computer_marker
     human_marker = board.human_marker
     immediate_win = board.open_square(computer_marker)
@@ -129,7 +164,7 @@ class Roy < Player
 
   def choose(board)
     minimax(board)
-    board.active_turn = :human
+    # board.active_turn = :human
     @choice
   end
 
@@ -142,9 +177,12 @@ class Roy < Player
 
     board.empty_squares.each do |square|
       possible_board = board.new_state(square)
-      scores << minimax(possible_board, depth + 1)
-      squares << square
+      scores.push minimax(possible_board, depth + 1)
+      squares.push square
     end
+
+    p squares
+    p scores
 
     if board.computer_turn?
       max_score_index = scores.each_with_index.to_a.max[1]
@@ -152,7 +190,7 @@ class Roy < Player
       return scores[max_score_index]
     else
       min_score_index = scores.each_with_index.min[1]
-      @computer_choice = squares[min_score_index]
+      @choice = squares[min_score_index]
       return scores[min_score_index]
     end
   end
@@ -173,8 +211,8 @@ class Square
 
   attr_accessor :marker
 
-  def initialize
-    @marker = INITIAL_MARKER
+  def initialize(m = INITIAL_MARKER)
+    @marker = m
   end
 
   def marked?
@@ -191,27 +229,45 @@ class Square
 end
 
 class TTTGame
+  attr_reader :user_interface
+
   def initialize
+    @user_interface = UserInterface.new
+    @human = Human.new
+    @board = Board.new
+    scores = {
+      human: 0,
+      computer: 0,
+      tie: 0
+    }
   end
 
   def play
+      user_interface.welcome
+      user_dependent_setup
+      main_game
+      user_interface.goodbye
   end
 
   private
+
+  def main_game
+    begin
+    ensure
+      user_interface.revert_terminal
+    end
+  end
 end
 
 class UserInterface
-  SQUARE_POSITIONS = [
-    [3, 2], [9, 2], [15, 2],
-    [3, 6], [9, 6], [15, 6],
-    [3, 10], [9, 10], [15, 10]
-  ]
+  SQUARE_POSITIONS = {
+    1 => [3, 2], 2 => [9, 2], 3 => [15, 2], 4 => [3, 6], 5 => [9, 6],
+    6 => [15, 6], 7 => [3, 10], 8 => [9, 10], 9 => [15, 10]
+  }
 
   attr_accessor :x, :y
 
   def initialize
-    system('tput civis')
-    $stdout.clear_screen
     @x = 1
     @y = 1
     @cursor = Cursor.new
@@ -233,12 +289,33 @@ class UserInterface
     end
   end
 
+  def init_tui
+    system('tput init')
+    system('tput civis')
+    $stdout.clear_screen
+  end
+
+  def welcome
+    puts "Welcome to Tic Tac Toe!"
+  end
+
+  def goodbye
+    puts "Thanks for playing Tic Tac Toe! Goodbye!"
+  end
+
+  def revert_terminal
+    system('tput cnorm')
+    $stdin.echo = true
+    $stdout.clear_screen
+  end
+
   private
 
-  def draw_cursor(board_state)
+  def draw_cursor(board)
     set_pos(@cursor.x, @cursor.y)
-    print_char("#{FG_BLACK}#{BG_WHITE}#{board_state[@cursor.square]}#{RESET}")
-    set_pos(1, 15) # in case `tput civis` fails to hide console cursor 
+    print_char("#{FG_BLACK}#{BG_WHITE}#{board[@cursor.square]}#{RESET}")
+    # move terminal cursor off the board in case `tput civis` failed
+    set_pos(1, 15)
   end
 
   def draw_skeleton
@@ -251,10 +328,10 @@ class UserInterface
     puts "q to quit at any time"
   end
 
-  def draw_squares(board_state)
-    SQUARE_POSITIONS.each_with_index do |(x, y), index|
+  def draw_squares(board)
+    SQUARE_POSITIONS.values.each_with_index do |(x, y), index|
       set_pos(x, y)
-      print_char(board_state[index])
+      print_char(board[index])
     end
   end
 

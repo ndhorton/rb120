@@ -43,15 +43,15 @@ class UserInterface
     print_string(Board::SKELETON)
 
     set_pos(1, 13)
-    puts "k/j - up/down, h/l - left/right, <space> to mark a square"
+    print_string "k/j - up/down, h/l - left/right, <space> to mark a square"
     set_pos(1, 14)
-    puts "q to quit at any time"
+    print_string "q to quit at any time"
   end
 
   def draw_cursor(board_state)
     set_pos(@cursor.x, @cursor.y)
     print_char("#{FG_BLACK}#{BG_WHITE}#{board_state[@cursor.square_index]}#{RESET}")
-    set_pos(1, 15) # in case `tput civis` fails to hide console cursor 
+    set_pos(1, 15) # in case `tput civis` fails to hide terminal cursor 
   end
 
   def draw_squares(board_state)
@@ -187,3 +187,4 @@ class TTTGame
 end
 
 TTTGame.new.play
+
