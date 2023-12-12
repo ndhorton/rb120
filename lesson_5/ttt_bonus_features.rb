@@ -8,7 +8,7 @@ class Board
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                   [[1, 5, 9], [3, 5, 7]]              # diagonals
 
-  attr_reader :computer_active
+  attr_reader :computer_active, :first_move
   attr_accessor :human_marker, :computer_marker, :active_turn
 
   def initialize(comp_act = false)
@@ -251,8 +251,17 @@ class TTTGame
 
   private
 
+  def play_round
+
+  end
+
   def main_game
     begin
+      user_interface.init_tui
+      loop do
+        play_round
+        break unless user_interface.play_again?
+      end
     ensure
       user_interface.revert_terminal
     end
