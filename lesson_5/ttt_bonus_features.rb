@@ -1,12 +1,19 @@
 require 'io/console'
 require 'psych'
 
+FG_BLACK = "\e[30m"
+BG_WHITE = "\e[47m"
+BG_BLACK = "\e[40m"
+RESET = "\e[0m"
+
 TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
 
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                   [[1, 5, 9], [3, 5, 7]]              # diagonals
+
+  SKELETON = TEXT['board_skeleton'].join.freeze
 
   attr_reader :computer_active, :first_move
   attr_accessor :human_marker, :computer_marker, :active_turn
@@ -16,6 +23,10 @@ class Board
     set_active_player
     @squares = {}
     reset_squares
+  end
+
+  def [](key)
+    @squares[key]
   end
 
   def []=(key, marker)
@@ -57,6 +68,10 @@ class Board
     state.human_marker = human_marker
     state.computer_marker = computer_marker
     state
+  end
+
+  def someone_won?
+    !!(winning_marker)
   end
 
   def tie?
@@ -101,6 +116,11 @@ class Board
 end
 
 class Cursor
+  SQUARE_POSITIONS = {
+    1 => [3, 2], 2 => [9, 2], 3 => [15, 2], 4 => [3, 6], 5 => [9, 6],
+    6 => [15, 6], 7 => [3, 10], 8 => [9, 10], 9 => [15, 10]
+  }
+
   attr_accessor :x, :y
 
   def initialize
@@ -108,11 +128,11 @@ class Cursor
   end
 
   def reset
-    @x, @y = UserInterface::SQUARE_POSITIONS[5] # middle square position
+    @x, @y = SQUARE_POSITIONS[5] # middle square position
   end
 
   def square
-    UserInterface::SQUARE_POSITIONS.key([x, y])
+    SQUARE_POSITIONS.key([x, y])
   end
 end
 
@@ -181,9 +201,6 @@ class Roy < Player
       squares.push square
     end
 
-    p squares
-    p scores
-
     if board.computer_turn?
       max_score_index = scores.each_with_index.to_a.max[1]
       @choice = squares[max_score_index]
@@ -228,52 +245,7 @@ class Square
   end
 end
 
-class TTTGame
-  attr_reader :user_interface
-
-  def initialize
-    @user_interface = UserInterface.new
-    @human = Human.new
-    @board = Board.new
-    scores = {
-      human: 0,
-      computer: 0,
-      tie: 0
-    }
-  end
-
-  def play
-      user_interface.welcome
-      user_dependent_setup
-      main_game
-      user_interface.goodbye
-  end
-
-  private
-
-  def play_round
-
-  end
-
-  def main_game
-    begin
-      user_interface.init_tui
-      loop do
-        play_round
-        break unless user_interface.play_again?
-      end
-    ensure
-      user_interface.revert_terminal
-    end
-  end
-end
-
 class UserInterface
-  SQUARE_POSITIONS = {
-    1 => [3, 2], 2 => [9, 2], 3 => [15, 2], 4 => [3, 6], 5 => [9, 6],
-    6 => [15, 6], 7 => [3, 10], 8 => [9, 10], 9 => [15, 10]
-  }
-
   attr_accessor :x, :y
 
   def initialize
@@ -286,6 +258,11 @@ class UserInterface
     $stdout.clear_screen
     draw_skeleton
     draw_squares(board)
+    draw_cursor(board)
+  end
+
+  def goodbye
+    puts "Thanks for playing Tic Tac Toe! Goodbye!"
   end
 
   def human_choose(board)
@@ -304,18 +281,49 @@ class UserInterface
     $stdout.clear_screen
   end
 
-  def welcome
-    puts "Welcome to Tic Tac Toe!"
+  def prompt_for_difficulty
+    puts "Would you like to play against an (e)asy, (m)edium, or (h)ard opponent?"
+    answer = nil
+    loop do
+      answer = gets.chomp.strip.downcase
+      break if %w(e m h easy medium hard).include?(answer)
+      puts "Sorry, must be (e)asy, (m)edium, or (h)ard"
+    end
+    answer[0]
   end
 
-  def goodbye
-    puts "Thanks for playing Tic Tac Toe! Goodbye!"
+  def prompt_for_marker
+    puts "Would you like to play as X or O?"
+    answer = nil
+    loop do
+      answer = gets.chomp.strip.upcase
+      break if ['X', 'O'].include?(answer)
+      puts "Sorry, must be X or O"
+    end
+    answer
+  end
+
+  def read_input
+    ch = $stdin.getch
+    case ch.downcase
+    when 'h' then @cursor.x -= 6 unless @cursor.x == 3
+    when 'j' then @cursor.y += 4 unless @cursor.y == 10
+    when 'k' then @cursor.y -= 4 unless @cursor.y == 2
+    when 'l' then @cursor.x += 6 unless @cursor.x == 15
+    when ' ' then return @cursor.square
+    when 'q' then return :quit
+    end
+    nil
   end
 
   def revert_terminal
     system('tput cnorm')
     $stdin.echo = true
     $stdout.clear_screen
+  end
+
+  def welcome
+    puts "Welcome to Tic Tac Toe!"
   end
 
   private
@@ -338,9 +346,9 @@ class UserInterface
   end
 
   def draw_squares(board)
-    SQUARE_POSITIONS.values.each_with_index do |(x, y), index|
+    Cursor::SQUARE_POSITIONS.values.each_with_index do |(x, y), index|
       set_pos(x, y)
-      print_char(board[index])
+      print_char(board[index + 1])
     end
   end
 
@@ -359,23 +367,98 @@ class UserInterface
     string.each_char { |char| print_char(char) }
   end
 
-  def read_input
-    ch = $stdin.getch
-    case ch.downcase
-    when 'h' then @cursor.x -= 6 unless @cursor.x == 3
-    when 'j' then @cursor.y += 4 unless @cursor.y == 10
-    when 'k' then @cursor.y -= 4 unless @cursor.y == 2
-    when 'l' then @cursor.x += 6 unless @cursor.x == 15
-    when ' ' then return @cursor.square
-    when 'q' then return :quit
-    end
-    nil
-  end
-
   def set_pos(x, y)
     print("\e[#{y};#{x}H")
     @x = x
     @y = y
+  end
+end
+
+class TTTGame
+  attr_reader :user_interface, :board, :quit
+
+  def initialize
+    @user_interface = UserInterface.new
+    @human = Human.new
+    @board = Board.new
+    scores = {
+      human: 0,
+      computer: 0,
+      tie: 0
+    }
+  end
+
+  def play
+      user_interface.welcome
+      user_dependent_setup
+      main_game
+      user_interface.goodbye
+  end
+
+  private
+
+  def game_over?
+    board.full? || board.someone_won?
+  end
+
+  def play_again?
+  end
+
+  def play_game
+    loop do
+      user_interface.draw_board(board)
+      player_moves
+      break if game_over? || quit
+    end
+  end
+
+  def player_moves
+    move = user_interface.read_input
+    if move == :quit
+      @quit = true
+      return
+    end
+    board[move] = board.human_marker if (1..9).cover?(move)
+  end
+
+  def main_game
+    begin
+      user_interface.init_tui
+      loop do
+        play_game
+        break unless play_again?
+      end
+    ensure
+      user_interface.revert_terminal
+    end
+  end
+
+  def set_difficulty_level
+    difficulty = user_interface.prompt_for_difficulty
+    @computer = case difficulty
+                when 'e' then R2D2.new
+                when 'm' then Hal.new
+                when 'h' then Roy.new
+                end
+  end
+
+  def set_player_markers
+    marker = user_interface.prompt_for_marker
+    if marker == 'X'
+      board.human_marker = 'X'
+      board.computer_marker = 'O'
+    else
+      board.human_marker = 'O'
+      board.computer_marker = 'X'
+    end
+  end
+
+  def user_dependent_setup
+    # get name
+    set_player_markers
+    # difficulty level
+    set_difficulty_level
+    # who goes first
   end
 end
 
