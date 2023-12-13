@@ -1,14 +1,11 @@
-# TODO: minimax active turn broken?
-#       the problem with the user/computer turns is that every time
-#       the user moves the cursor, TTTGame#player_moves is acting like
-#       the human took a turn
+# TODO: implement reset_board, alternating who goes first with @first_move
+#       implement actually playing again
 
 require 'io/console'
 require 'psych'
 
 FG_BLACK = "\e[30m"
 BG_WHITE = "\e[47m"
-BG_BLACK = "\e[40m"
 RESET = "\e[0m"
 
 TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
@@ -20,12 +17,11 @@ class Board
 
   SKELETON = TEXT['board_skeleton'].join.freeze
 
-  attr_reader :first_move
+  attr_reader :first_move, :initial_marker
   attr_accessor :human_marker, :computer_marker, :active_turn
 
-  def initialize(computer_active: false)
-    @computer_active = computer_active
-    set_active_player
+  def initialize
+    @initial_marker = Square::INITIAL_MARKER
     @squares = {}
     reset_squares
   end
@@ -51,7 +47,7 @@ class Board
   end
 
   def end_state?
-    human_won? || computer_won? || full?
+    someone_won? || full?
   end
 
   def full?
@@ -74,7 +70,7 @@ class Board
     WINNING_LINES.each do |line|
       markers = @squares.values_at(*line).map(&:marker)
       if markers.count(marker) == 2 &&
-         markers.count(Square::INITIAL_MARKER) == 1
+         markers.count(initial_marker) == 1
         empty_index = markers.index { |sq| sq != marker }
         return line[empty_index]
       end
@@ -82,21 +78,12 @@ class Board
     nil
   end
 
-  def new_state(square)
-    state = Board.new(computer_active: !@computer_active)
-    state.squares = @squares.map { |k, v| [k, v.dup] }.to_h
-    state[square] = (human_turn? ? human_marker : computer_marker)
-    state.human_marker = human_marker
-    state.computer_marker = computer_marker
-    state
-  end
-
   def someone_won?
     !!(winning_marker)
   end
 
   def tie?
-    full? && !(human_won?) && !(computer_won?)
+    full? && !someone_won?
   end
 
   def winning_marker
@@ -109,24 +96,10 @@ class Board
     nil
   end
 
-  protected
-
-  def squares=(squares)
-    @squares = squares
-  end
-
   private
 
   def reset_squares
     (1..9).each { |key| @squares[key] = Square.new }
-  end
-
-  def set_active_player
-    if @computer_active
-      @active_turn = :computer
-    else
-      @active_turn = :human
-    end
   end
 
   def three_identical_markers?(squares)
@@ -148,8 +121,24 @@ class Cursor
     reset
   end
 
+  def down
+    @y += 4 unless @y == 12
+  end
+
+  def up
+    @y -= 4 unless @y == 4
+  end
+
+  def left
+    @x -= 6 unless @x == 3
+  end
+
+  def right
+    @x += 6 unless @x == 15
+  end
+
   def reset
-    @x, @y = SQUARE_POSITIONS[5] # middle square position
+    @x, @y = SQUARE_POSITIONS[5]
   end
 
   def square
@@ -172,18 +161,16 @@ class R2D2 < Player
   end
 
   def choose(board)
-    # board.active_turn = :human
     board.empty_squares.sample
   end
 end
 
-class Hal < Player
+class Sonny < Player
   def initialize
-    @name = 'Hal'
+    @name = 'Sonny'
   end
 
   def choose(board)
-    # board.active_turn = :human
     computer_marker = board.computer_marker
     human_marker = board.human_marker
     immediate_win = board.open_square(computer_marker)
@@ -197,40 +184,65 @@ class Hal < Player
   end
 end
 
-class Roy < Player
+class Hal < Player
   def initialize
-    @name = 'Roy'
+    @name = 'Hal'
     @choice = nil
   end
 
   def choose(board)
     minimax(board)
-    # board.active_turn = :human
     @choice
   end
 
   private
 
-  def minimax(board, depth = 1)
-    return score(board, depth) if board.end_state?
-    scores = []
-    squares = []
-
-    board.empty_squares.each do |square|
-      possible_board = board.new_state(square)
-      scores.push minimax(possible_board, depth + 1)
-      squares.push square
-    end
-
+  def appropriate_marker(board)
     if board.computer_turn?
-      max_score_index = scores.each_with_index.to_a.max[1]
-      @choice = squares[max_score_index]
-      return scores[max_score_index]
+      board.computer_marker
     else
-      min_score_index = scores.each_with_index.min[1]
-      @choice = squares[min_score_index]
-      return scores[min_score_index]
+      board.human_marker
     end
+  end
+
+  def change_board_state!(board, square)
+    board[square] = appropriate_marker(board)
+    reverse_active_turn!(board)
+  end
+
+  def min_or_max(board, squares, scores)
+    if board.computer_turn?
+      max_score_index = scores.each_with_index.to_a.max.last
+      @choice = squares[max_score_index]
+      scores[max_score_index]
+    else
+      min_score_index = scores.each_with_index.min.last
+      @choice = squares[min_score_index]
+      scores[min_score_index]
+    end
+  end
+
+  def minimax(board, depth = 0)
+    return score(board, depth) if board.end_state?
+
+    scores = []
+    squares = board.empty_squares.each do |square|
+      change_board_state!(board, square)
+      scores << minimax(board, depth + 1)
+      revert_board_state!(board, square)
+    end
+
+    min_or_max(board, squares, scores)
+  end
+
+  def reverse_active_turn!(board)
+    computer_active = board.computer_turn?
+    board.active_turn = (computer_active ? :human : :computer)
+  end
+
+  def revert_board_state!(board, square)
+    board[square] = board.initial_marker
+    reverse_active_turn!(board)
   end
 
   def score(board, depth)
@@ -249,8 +261,8 @@ class Square
 
   attr_accessor :marker
 
-  def initialize(m = INITIAL_MARKER)
-    @marker = m
+  def initialize
+    @marker = INITIAL_MARKER
   end
 
   def marked?
@@ -275,28 +287,22 @@ class UserInterface
     @cursor = Cursor.new
   end
 
-  def draw_board(human, computer, board)
+  def announce_opponent(computer)
+    puts "Your opponent today will be #{computer.name}"
+  end
+
+  def draw_board(human, computer, board, cursor: true)
     $stdout.clear_screen
     draw_header(human, computer, board)
     draw_skeleton
     draw_squares(board)
-    draw_footer
-    draw_cursor(board)
+    draw_footer(board, computer)
+    draw_cursor(board) if cursor
   end
 
   def goodbye
     puts "Thanks for playing Tic Tac Toe! Goodbye!"
   end
-
-  # def human_choose(board)
-  #   board.active_turn = :computer
-  #   loop do
-  #     draw_board(board_state)
-  #     draw_cursor(board_state)
-  #     choice = read_input
-  #     return choice if choice
-  #   end
-  # end
 
   def init_tui
     system('tput init')
@@ -305,7 +311,7 @@ class UserInterface
   end
 
   def prompt_for_difficulty
-    puts "Would you like to play against an (e)asy, (m)edium, or (h)ard opponent?"
+    puts "Would you like an (e)asy, (m)edium, or (h)ard opponent?"
     answer = nil
     loop do
       answer = gets.chomp.strip.downcase
@@ -313,6 +319,17 @@ class UserInterface
       puts "Sorry, must be (e)asy, (m)edium, or (h)ard"
     end
     answer[0]
+  end
+
+  def prompt_for_name
+    puts "Please enter your name:"
+    answer = nil
+    loop do
+      answer = gets.chomp.strip
+      break unless answer.empty?
+      puts "Sorry, name must be at least one character"
+    end
+    answer
   end
 
   def prompt_for_marker
@@ -326,16 +343,35 @@ class UserInterface
     answer
   end
 
-  def read_input
-    ch = $stdin.getch
-    case ch.downcase
-    when 'h' then @cursor.x -= 6 unless @cursor.x == 3
-    when 'j' then @cursor.y += 4 unless @cursor.y == 10
-    when 'k' then @cursor.y -= 4 unless @cursor.y == 2
-    when 'l' then @cursor.x += 6 unless @cursor.x == 15
-    when ' ' then return @cursor.square
-    when 'q' then return :quit
+  def prompt_for_play_again
+    puts "Would you like to play again (y or n)?"
+    answer = nil
+    loop do
+      answer = gets.chomp.strip.downcase
+      break if ['y', 'n', 'yes', 'no'].include?(answer)
+      puts "Sorry, must be y or n"
     end
+    answer[0]
+  end
+
+  def prompt_for_who_goes_first
+    puts "Who goes first (h)uman or (c)omputer?"
+    answer = nil
+    loop do
+      answer = gets.chomp.strip.downcase
+      break if %w(h c human computer).include?(answer)
+      puts "Sorry, must be (h)uman or (c)omputer"
+    end
+    answer[0]
+  end
+
+  def read_input
+    char = $stdin.getch
+
+    return @cursor.square if char == ' '
+    return :quit if char == 'q'
+
+    move_cursor(char)
     nil
   end
 
@@ -362,16 +398,22 @@ class UserInterface
     set_pos(1, 17)
   end
 
-  def draw_footer
-    set_pos(1, 15)
-    puts "k/j - up/down, h/l - left/right, <space> to mark a square"
-    set_pos(1, 16)
-    puts "q to quit"
+  def draw_footer(board, computer)
+    if board.human_turn? && !board.end_state?
+      set_pos(1, 15)
+      print_string "k/j - up/down, h/l - left/right, <space> to mark a square\n"
+      print_string "q to quit\n"
+    elsif !board.end_state?
+      set_pos(1, 15)
+      print_string "#{computer.name} is thinking..."
+    else
+      set_pos(1, 15)
+    end
   end
 
   def draw_header(human, computer, board)
     set_pos(1, 1)
-    print_string "#{human.name} is #{board.human_marker}, " \
+    print_string "#{human.name} is #{board.human_marker}. " \
                  "#{computer.name} is #{board.computer_marker}.\n\n"
   end
 
@@ -384,6 +426,15 @@ class UserInterface
     Cursor::SQUARE_POSITIONS.values.each_with_index do |(x, y), index|
       set_pos(x, y)
       print_char(board[index + 1])
+    end
+  end
+
+  def move_cursor(char)
+    case char.downcase
+    when 'h' then @cursor.left
+    when 'j' then @cursor.down
+    when 'k' then @cursor.up
+    when 'l' then @cursor.right
     end
   end
 
@@ -424,10 +475,10 @@ class TTTGame
   end
 
   def play
-      user_interface.welcome
-      user_dependent_setup
-      main_game
-      user_interface.goodbye
+    user_interface.welcome
+    user_dependent_setup
+    main_game
+    user_interface.goodbye
   end
 
   private
@@ -444,23 +495,24 @@ class TTTGame
 
   def human_moves
     move = user_interface.read_input
-    if move == :quit
-      @quit = true
-      return
-    end
-    if board.empty_squares.include?(move)
-      board[move] = board.human_marker
-      user_interface.reset_cursor
-      board.active_turn = :computer
-    end
+    @quit = true if move == :quit
+
+    return unless board.empty_squares.include?(move)
+
+    board[move] = board.human_marker
+    user_interface.reset_cursor
+    board.active_turn = :computer
   end
 
   def play_again?
+    user_interface.draw_board(human, computer, board, cursor: false)
+    answer = user_interface.prompt_for_play_again
+    answer == 'y'
   end
 
   def play_game
     loop do
-      user_interface.draw_board(human, computer, board)
+      show_board
       player_moves
       break if game_over? || quit
     end
@@ -475,24 +527,23 @@ class TTTGame
   end
 
   def main_game
-    begin
-      user_interface.init_tui
-      loop do
-        play_game
-        break unless play_again?
-      end
-    ensure
-      user_interface.revert_terminal
+    user_interface.init_tui
+    loop do
+      play_game
+      break unless play_again?
     end
+  ensure
+    user_interface.revert_terminal
   end
 
   def set_difficulty_level
     difficulty = user_interface.prompt_for_difficulty
     @computer = case difficulty
                 when 'e' then R2D2.new
-                when 'm' then Hal.new
-                when 'h' then Roy.new
+                when 'm' then Sonny.new
+                when 'h' then Hal.new
                 end
+    user_interface.announce_opponent(computer)
   end
 
   def set_player_markers
@@ -506,12 +557,30 @@ class TTTGame
     end
   end
 
+  def set_human_name
+    answer = user_interface.prompt_for_name
+    human.name = answer
+  end
+
+  def set_who_goes_first
+    answer = user_interface.prompt_for_who_goes_first
+    @first_player = (answer == 'h' ? :human : :computer)
+    board.active_turn = @first_player
+  end
+
+  def show_board
+    if board.human_turn?
+      user_interface.draw_board(human, computer, board)
+    else
+      user_interface.draw_board(human, computer, board, cursor: false)
+    end
+  end
+
   def user_dependent_setup
-    # get name
+    set_human_name
     set_player_markers
-    # difficulty level
     set_difficulty_level
-    # who goes first
+    set_who_goes_first
   end
 end
 

@@ -187,4 +187,3 @@ class TTTGame
 end
 
 TTTGame.new.play
-

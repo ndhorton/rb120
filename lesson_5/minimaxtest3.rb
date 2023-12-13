@@ -154,15 +154,15 @@ end
 
 game = Game.new
 game.board = {
-  1 => Square.new(' '),
-  2 => Square.new('X'),
-  3 => Square.new(' '),
-  4 => Square.new(' '),
-  5 => Square.new(' '),
+  1 => Square.new('X'),
+  2 => Square.new('O'),
+  3 => Square.new('O'),
+  4 => Square.new('O'),
+  5 => Square.new('X'),
   6 => Square.new('X'),
-  7 => Square.new('O'),
+  7 => Square.new('X'),
   8 => Square.new('O'),
-  9 => Square.new('X')
+  9 => Square.new('O')
 }
 game.human_marker = 'X'
 game.computer_marker = 'O'

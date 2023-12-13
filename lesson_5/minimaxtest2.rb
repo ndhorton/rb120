@@ -72,9 +72,6 @@ class Game
       scores.push minimax(possible_game, depth + 1)
       moves.push move
     end
-  
-    p moves
-    p scores
 
     if game.active_turn == @computer_player
       max_score_index = scores.each_with_index.to_a.max[1]
