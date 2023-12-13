@@ -1,9 +1,32 @@
-# TODO: genericize prompt methods
+# TODO: declare winner before asking play again
+#       genericize prompt methods
 
 require 'io/console'
 require 'psych'
 
 TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
+
+class Square
+  INITIAL_MARKER = ' '
+
+  attr_accessor :marker
+
+  def initialize
+    @marker = INITIAL_MARKER
+  end
+
+  def marked?
+    marker != INITIAL_MARKER
+  end
+
+  def to_s
+    @marker
+  end
+
+  def unmarked?
+    marker == INITIAL_MARKER
+  end
+end
 
 class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
@@ -102,43 +125,6 @@ class Board
   end
 end
 
-class Cursor
-  SQUARE_POSITIONS = {
-    1 => [3, 4], 2 => [9, 4], 3 => [15, 4], 4 => [3, 8], 5 => [9, 8],
-    6 => [15, 8], 7 => [3, 12], 8 => [9, 12], 9 => [15, 12]
-  }
-
-  attr_accessor :x, :y
-
-  def initialize
-    reset
-  end
-
-  def down
-    @y += 4 unless @y == 12
-  end
-
-  def up
-    @y -= 4 unless @y == 4
-  end
-
-  def left
-    @x -= 6 unless @x == 3
-  end
-
-  def right
-    @x += 6 unless @x == 15
-  end
-
-  def reset
-    @x, @y = SQUARE_POSITIONS[5]
-  end
-
-  def square
-    SQUARE_POSITIONS.key([x, y])
-  end
-end
-
 class Player
   attr_reader :name
   attr_accessor :marker
@@ -164,10 +150,8 @@ class Sonny < Player
   end
 
   def choose(board)
-    computer_marker = board.computer_marker
-    human_marker = board.human_marker
-    immediate_win = board.open_square(computer_marker)
-    immediate_threat = board.open_square(human_marker)
+    immediate_win = board.open_square(board.computer_marker)
+    immediate_threat = board.open_square(board.human_marker)
     if immediate_win                then immediate_win
     elsif immediate_threat          then immediate_threat
     elsif board.middle_square_open? then 5
@@ -249,25 +233,40 @@ class Hal < Player
   end
 end
 
-class Square
-  INITIAL_MARKER = ' '
+class Cursor
+  SQUARE_POSITIONS = {
+    1 => [3, 4], 2 => [9, 4], 3 => [15, 4], 4 => [3, 8], 5 => [9, 8],
+    6 => [15, 8], 7 => [3, 12], 8 => [9, 12], 9 => [15, 12]
+  }
 
-  attr_accessor :marker
+  attr_accessor :x, :y
 
   def initialize
-    @marker = INITIAL_MARKER
+    reset
   end
 
-  def marked?
-    marker != INITIAL_MARKER
+  def down
+    @y += 4 unless @y == 12
   end
 
-  def to_s
-    @marker
+  def up
+    @y -= 4 unless @y == 4
   end
 
-  def unmarked?
-    marker == INITIAL_MARKER
+  def left
+    @x -= 6 unless @x == 3
+  end
+
+  def right
+    @x += 6 unless @x == 15
+  end
+
+  def reset
+    @x, @y = SQUARE_POSITIONS[5]
+  end
+
+  def square
+    SQUARE_POSITIONS.key([x, y])
   end
 end
 
