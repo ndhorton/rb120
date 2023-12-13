@@ -1,9 +1,7 @@
+# TODO: genericize prompt methods
+
 require 'io/console'
 require 'psych'
-
-FG_BLACK = "\e[30m"
-BG_WHITE = "\e[47m"
-RESET = "\e[0m"
 
 TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
 
@@ -274,6 +272,10 @@ class Square
 end
 
 class UserInterface
+  FG_BLACK = "\e[30m"
+  BG_WHITE = "\e[47m"
+  RESET = "\e[0m"
+
   BOARD_SKELETON = TEXT['board_skeleton'].join.freeze
 
   attr_accessor :x, :y
@@ -303,7 +305,7 @@ class UserInterface
 
   def init_tui
     system('tput init')
-    # system('tput civis')
+    system('tput civis')
     $stdout.clear_screen
   end
 
