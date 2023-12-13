@@ -1,5 +1,3 @@
-# TODO: show scores at the end
-
 require 'io/console'
 require 'psych'
 
@@ -13,8 +11,6 @@ class Board
   WINNING_LINES = [[1, 2, 3], [4, 5, 6], [7, 8, 9]] + # rows
                   [[1, 4, 7], [2, 5, 8], [3, 6, 9]] + # columns
                   [[1, 5, 9], [3, 5, 7]]              # diagonals
-
-  SKELETON = TEXT['board_skeleton'].join.freeze
 
   attr_reader :initial_marker
   attr_accessor :human_marker, :computer_marker, :active_turn
@@ -99,7 +95,7 @@ class Board
     (1..9).each { |key| @squares[key] = Square.new }
   end
 
-  private 
+  private
 
   def three_identical_markers?(squares)
     markers = squares.select(&:marked?).collect(&:marker)
@@ -278,6 +274,8 @@ class Square
 end
 
 class UserInterface
+  BOARD_SKELETON = TEXT['board_skeleton'].join.freeze
+
   attr_accessor :x, :y
 
   def initialize
@@ -305,7 +303,7 @@ class UserInterface
 
   def init_tui
     system('tput init')
-    system('tput civis')
+    # system('tput civis')
     $stdout.clear_screen
   end
 
@@ -354,7 +352,7 @@ class UserInterface
   end
 
   def prompt_for_who_goes_first
-    puts "Who goes first (h)uman or (c)omputer?"
+    puts "Which player should go first, (h)uman or (c)omputer?"
     answer = nil
     loop do
       answer = gets.chomp.strip.downcase
@@ -374,6 +372,21 @@ class UserInterface
     nil
   end
 
+  def display_scores(final_scores, human, computer)
+    puts "At the end of play:"
+    puts "\t#{human.name} won #{pluralize(final_scores[:human])},"
+    puts "\t#{computer.name} won #{pluralize(final_scores[:computer])},"
+    puts "\twith #{pluralize(final_scores[:tie])} tied."
+  end
+
+  def pluralize(number)
+    if number == 1
+      "#{number} game"
+    else
+      "#{number} games"
+    end
+  end
+
   def reset_cursor
     @cursor.x, @cursor.y = Cursor::SQUARE_POSITIONS[5]
   end
@@ -385,6 +398,7 @@ class UserInterface
   end
 
   def welcome
+    $stdout.clear_screen
     puts "Welcome to Tic Tac Toe!"
   end
 
@@ -418,7 +432,7 @@ class UserInterface
 
   def draw_skeleton
     set_pos(1, 3)
-    print_string(Board::SKELETON)
+    print_string(BOARD_SKELETON)
   end
 
   def draw_squares(board)
@@ -477,6 +491,7 @@ class TTTGame
     user_interface.welcome
     user_dependent_setup
     main_game
+    show_scores
     user_interface.goodbye
   end
 
@@ -588,6 +603,10 @@ class TTTGame
     else
       user_interface.draw_board(human, computer, board, cursor: false)
     end
+  end
+
+  def show_scores
+    user_interface.display_scores(@scores, human, computer)
   end
 
   def update_scores
