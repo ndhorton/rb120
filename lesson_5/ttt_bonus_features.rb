@@ -1,3 +1,8 @@
+# TODO: minimax active turn broken?
+#       the problem with the user/computer turns is that every time
+#       the user moves the cursor, TTTGame#player_moves is acting like
+#       the human took a turn
+
 require 'io/console'
 require 'psych'
 
@@ -15,11 +20,11 @@ class Board
 
   SKELETON = TEXT['board_skeleton'].join.freeze
 
-  attr_reader :computer_active, :first_move
+  attr_reader :first_move
   attr_accessor :human_marker, :computer_marker, :active_turn
 
-  def initialize(comp_act = false)
-    @computer_active = comp_act
+  def initialize(computer_active: false)
+    @computer_active = computer_active
     set_active_player
     @squares = {}
     reset_squares
@@ -61,8 +66,24 @@ class Board
     winning_marker == human_marker
   end
 
+  def middle_square_open?
+    @squares[5].unmarked?
+  end
+
+  def open_square(marker)
+    WINNING_LINES.each do |line|
+      markers = @squares.values_at(*line).map(&:marker)
+      if markers.count(marker) == 2 &&
+         markers.count(Square::INITIAL_MARKER) == 1
+        empty_index = markers.index { |sq| sq != marker }
+        return line[empty_index]
+      end
+    end
+    nil
+  end
+
   def new_state(square)
-    state = Board.new(!computer_active)
+    state = Board.new(computer_active: !@computer_active)
     state.squares = @squares.map { |k, v| [k, v.dup] }.to_h
     state[square] = (human_turn? ? human_marker : computer_marker)
     state.human_marker = human_marker
@@ -101,7 +122,7 @@ class Board
   end
 
   def set_active_player
-    if computer_active
+    if @computer_active
       @active_turn = :computer
     else
       @active_turn = :human
@@ -117,8 +138,8 @@ end
 
 class Cursor
   SQUARE_POSITIONS = {
-    1 => [3, 2], 2 => [9, 2], 3 => [15, 2], 4 => [3, 6], 5 => [9, 6],
-    6 => [15, 6], 7 => [3, 10], 8 => [9, 10], 9 => [15, 10]
+    1 => [3, 4], 2 => [9, 4], 3 => [15, 4], 4 => [3, 8], 5 => [9, 8],
+    6 => [15, 8], 7 => [3, 12], 8 => [9, 12], 9 => [15, 12]
   }
 
   attr_accessor :x, :y
@@ -150,7 +171,7 @@ class R2D2 < Player
     @name = 'R2D2'
   end
 
-  def choose_square(board)
+  def choose(board)
     # board.active_turn = :human
     board.empty_squares.sample
   end
@@ -254,10 +275,12 @@ class UserInterface
     @cursor = Cursor.new
   end
 
-  def draw_board(board)
+  def draw_board(human, computer, board)
     $stdout.clear_screen
+    draw_header(human, computer, board)
     draw_skeleton
     draw_squares(board)
+    draw_footer
     draw_cursor(board)
   end
 
@@ -265,15 +288,15 @@ class UserInterface
     puts "Thanks for playing Tic Tac Toe! Goodbye!"
   end
 
-  def human_choose(board)
-    board.acitve_turn = :computer
-    loop do
-      draw_board(board_state)
-      draw_cursor(board_state)
-      choice = read_input
-      return choice if choice
-    end
-  end
+  # def human_choose(board)
+  #   board.active_turn = :computer
+  #   loop do
+  #     draw_board(board_state)
+  #     draw_cursor(board_state)
+  #     choice = read_input
+  #     return choice if choice
+  #   end
+  # end
 
   def init_tui
     system('tput init')
@@ -316,6 +339,10 @@ class UserInterface
     nil
   end
 
+  def reset_cursor
+    @cursor.x, @cursor.y = Cursor::SQUARE_POSITIONS[5]
+  end
+
   def revert_terminal
     system('tput cnorm')
     $stdin.echo = true
@@ -332,17 +359,25 @@ class UserInterface
     set_pos(@cursor.x, @cursor.y)
     print_char("#{FG_BLACK}#{BG_WHITE}#{board[@cursor.square]}#{RESET}")
     # move terminal cursor off the board in case `tput civis` failed
+    set_pos(1, 17)
+  end
+
+  def draw_footer
     set_pos(1, 15)
+    puts "k/j - up/down, h/l - left/right, <space> to mark a square"
+    set_pos(1, 16)
+    puts "q to quit"
+  end
+
+  def draw_header(human, computer, board)
+    set_pos(1, 1)
+    print_string "#{human.name} is #{board.human_marker}, " \
+                 "#{computer.name} is #{board.computer_marker}.\n\n"
   end
 
   def draw_skeleton
-    set_pos(1, 1)
+    set_pos(1, 3)
     print_string(Board::SKELETON)
-
-    set_pos(1, 13)
-    puts "k/j - up/down, h/l - left/right, <space> to mark a square"
-    set_pos(1, 14)
-    puts "q to quit at any time"
   end
 
   def draw_squares(board)
@@ -375,7 +410,7 @@ class UserInterface
 end
 
 class TTTGame
-  attr_reader :user_interface, :board, :quit
+  attr_reader :user_interface, :board, :quit, :human, :computer
 
   def initialize
     @user_interface = UserInterface.new
@@ -397,8 +432,27 @@ class TTTGame
 
   private
 
+  def computer_moves
+    move = computer.choose(board)
+    board[move] = board.computer_marker
+    board.active_turn = :human
+  end
+
   def game_over?
     board.full? || board.someone_won?
+  end
+
+  def human_moves
+    move = user_interface.read_input
+    if move == :quit
+      @quit = true
+      return
+    end
+    if board.empty_squares.include?(move)
+      board[move] = board.human_marker
+      user_interface.reset_cursor
+      board.active_turn = :computer
+    end
   end
 
   def play_again?
@@ -406,19 +460,18 @@ class TTTGame
 
   def play_game
     loop do
-      user_interface.draw_board(board)
+      user_interface.draw_board(human, computer, board)
       player_moves
       break if game_over? || quit
     end
   end
 
   def player_moves
-    move = user_interface.read_input
-    if move == :quit
-      @quit = true
-      return
+    if board.human_turn?
+      human_moves
+    else
+      computer_moves
     end
-    board[move] = board.human_marker if (1..9).cover?(move)
   end
 
   def main_game
