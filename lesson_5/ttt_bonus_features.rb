@@ -1,5 +1,4 @@
-# TODO: implement reset_board, alternating who goes first with @first_move
-#       implement actually playing again
+# TODO: show scores at the end
 
 require 'io/console'
 require 'psych'
@@ -17,7 +16,7 @@ class Board
 
   SKELETON = TEXT['board_skeleton'].join.freeze
 
-  attr_reader :first_move, :initial_marker
+  attr_reader :initial_marker
   attr_accessor :human_marker, :computer_marker, :active_turn
 
   def initialize
@@ -96,11 +95,11 @@ class Board
     nil
   end
 
-  private
-
   def reset_squares
     (1..9).each { |key| @squares[key] = Square.new }
   end
+
+  private 
 
   def three_identical_markers?(squares)
     markers = squares.select(&:marked?).collect(&:marker)
@@ -467,7 +466,7 @@ class TTTGame
     @user_interface = UserInterface.new
     @human = Human.new
     @board = Board.new
-    scores = {
+    @scores = {
       human: 0,
       computer: 0,
       tie: 0
@@ -530,10 +529,25 @@ class TTTGame
     user_interface.init_tui
     loop do
       play_game
+      break if quit
+      update_scores
       break unless play_again?
+      reset
     end
   ensure
     user_interface.revert_terminal
+  end
+
+  def reset
+    board.reset_squares
+    who_goes_first = @first_player
+    if who_goes_first == :human
+      @first_player = :computer
+      board.active_turn = :computer
+    else
+      @first_player = :human
+      board.active_turn = :human
+    end
   end
 
   def set_difficulty_level
@@ -573,6 +587,16 @@ class TTTGame
       user_interface.draw_board(human, computer, board)
     else
       user_interface.draw_board(human, computer, board, cursor: false)
+    end
+  end
+
+  def update_scores
+    if board.human_won?
+      @scores[:human] += 1
+    elsif board.computer_won?
+      @scores[:computer] += 1
+    else
+      @scores[:tie] += 1
     end
   end
 
