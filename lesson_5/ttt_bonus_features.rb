@@ -475,7 +475,7 @@ class TTTGame
       display_goodbye
     rescue ConsoleWindowError => e
       puts "Error: #{e.message}."
-      puts "Please resize console window and try again."
+      puts "Please expand window and try again."
     end
   end
 
