@@ -101,7 +101,7 @@ module Displayable
 
   def init_tui
     if $stdout.winsize.first < 17
-      raise ConsoleWindowError, "console window is too small"
+      raise ConsoleWindowError, TEXT['winsize_error_message']
     end
     system('tput init')
     system('tput civis')
@@ -474,8 +474,8 @@ class TTTGame
       display_scores
       display_goodbye
     rescue ConsoleWindowError => e
-      puts "Error: #{e.message}."
-      puts "Please expand window and try again."
+      puts e.message
+      puts TEXT['winsize_error_rescue']
     end
   end
 

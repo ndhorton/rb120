@@ -48,6 +48,8 @@
     prompt_who_goes_first_error: "Sorry, must be (h)uman or (c)omputer",
     prompt_who_goes_first_options: [h, c, human, computer],
     prompt_who_goes_first_text: "Which player should go first, (h)uman or (c)omputer?",
-    welcome: "Welcome to Tic Tac Toe!"
+    welcome: "Welcome to Tic Tac Toe!",
+    winsize_error_message: "Error: console window is too small.",
+    winsize_error_rescue: "Please expand window and try again."
   }
 }
