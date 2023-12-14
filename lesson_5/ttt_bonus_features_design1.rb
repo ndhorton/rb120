@@ -3,171 +3,25 @@ require 'psych'
 
 TEXT = Psych.load_file("#{__dir__}/ttt_bonus_features.yml")['english']
 
-module Displayable
-  private
+class Square
+  INITIAL_MARKER = ' '
 
-  FG_BLACK = "\e[30m"
-  BG_WHITE = "\e[47m"
-  RESET = "\e[0m"
+  attr_accessor :marker
 
-  BOARD_SKELETON = TEXT['board_skeleton'].join.freeze
-
-  def display_board
-    draw_board(cursor: board.human_turn?)
+  def initialize
+    @marker = INITIAL_MARKER
   end
 
-  def display_games_won(player_name, player_score)
-    puts format(TEXT['display_scores_won'],
-                player_name: player_name,
-                game_or_games: pluralize(player_score))
+  def marked?
+    marker != INITIAL_MARKER
   end
 
-  def display_goodbye
-    puts TEXT['goodbye']
+  def to_s
+    @marker
   end
 
-  def display_opponent
-    puts format(TEXT['display_opponent'], computer_name: computer.name)
-  end
-
-  def display_scores
-    puts TEXT['display_scores_preamble']
-    display_games_won(human.name, scores[:human])
-    display_games_won(computer.name, scores[:computer])
-    puts format(TEXT['display_scores_tie'],
-                game_or_games: pluralize(scores[:tie]))
-  end
-
-  def display_welcome
-    $stdout.clear_screen
-    puts TEXT['welcome']
-  end
-
-  def display_winner
-    if board.human_won?
-      puts format(TEXT['display_winner_won'], player_name: human.name)
-    elsif board.computer_won?
-      puts format(TEXT['display_winner_won'], player_name: computer.name)
-    else
-      puts TEXT['display_winner_tie']
-    end
-  end
-
-  def draw_board(cursor: true)
-    $stdout.clear_screen
-    draw_header
-    draw_skeleton
-    draw_squares
-    draw_footer
-    draw_cursor if cursor
-  end
-
-  def draw_cursor
-    set_pos(@cursor.x, @cursor.y)
-    print("#{FG_BLACK}#{BG_WHITE}#{board[@cursor.square]}#{RESET}")
-    set_pos(1, 17)
-  end
-
-  def draw_footer
-    game_not_over = !board.end_state?
-    set_pos(1, 15)
-    if board.human_turn? && game_not_over
-      print TEXT['draw_footer_controls']
-      print TEXT['draw_footer_quit']
-    elsif game_not_over
-      print format(TEXT['computer_is_thinking'], computer_name: computer.name)
-    end
-  end
-
-  def draw_header
-    set_pos(1, 1)
-    print format(TEXT['draw_header'], human_name: human.name,
-                                      human_marker: board.human_marker,
-                                      computer_name: computer.name,
-                                      computer_marker: board.computer_marker)
-  end
-
-  def draw_skeleton
-    set_pos(1, 3)
-    print(BOARD_SKELETON)
-  end
-
-  def draw_squares
-    Cursor::SQUARE_POSITIONS.values.each_with_index do |(x, y), index|
-      set_pos(x, y)
-      print(board[index + 1])
-    end
-  end
-
-  def init_tui
-    system('tput init')
-    system('tput civis')
-    $stdout.clear_screen
-  end
-
-  def pluralize(number)
-    if number == 1
-      format(TEXT['pluralize_single'], number: number)
-    else
-      format(TEXT['pluralize_plural'], number: number)
-    end
-  end
-
-  def revert_terminal
-    system('tput cnorm')
-    $stdin.echo = true
-    $stdout.clear_screen
-  end
-
-  def set_pos(x, y)
-    print("\e[#{y};#{x}H")
-  end
-end
-
-module Promptable
-  private
-
-  def prompt(prompt_text, options, error_text)
-    puts prompt_text
-    answer = nil
-    loop do
-      answer = gets.chomp.strip.downcase
-      break if options.include?(answer)
-      puts error_text
-    end
-    answer[0]
-  end
-
-  def prompt_for_difficulty
-    prompt(TEXT['prompt_difficulty_text'], TEXT['prompt_difficulty_options'],
-           TEXT['prompt_difficulty_error'])
-  end
-
-  def prompt_for_marker
-    prompt(TEXT['prompt_marker_text'], TEXT['prompt_marker_options'],
-           TEXT['prompt_marker_error'])
-  end
-
-  def prompt_for_name
-    puts TEXT['prompt_name_text']
-    answer = nil
-    loop do
-      answer = gets.chomp.strip
-      break unless answer.empty?
-      puts TEXT['prompt_name_error']
-    end
-    answer
-  end
-
-  def prompt_for_play_again
-    prompt(TEXT['prompt_play_again_text'], TEXT['prompt_play_again_options'],
-           TEXT['prompt_play_again_error'])
-  end
-
-  def prompt_for_who_goes_first
-    prompt(TEXT['prompt_who_goes_first_text'],
-           TEXT['prompt_who_goes_first_options'],
-           TEXT['prompt_who_goes_first_error'])
+  def unmarked?
+    marker == INITIAL_MARKER
   end
 end
 
@@ -268,28 +122,6 @@ class Board
   end
 end
 
-class Square
-  INITIAL_MARKER = ' '
-
-  attr_accessor :marker
-
-  def initialize
-    @marker = INITIAL_MARKER
-  end
-
-  def marked?
-    marker != INITIAL_MARKER
-  end
-
-  def to_s
-    @marker
-  end
-
-  def unmarked?
-    marker == INITIAL_MARKER
-  end
-end
-
 class Player
   attr_reader :name
   attr_accessor :marker
@@ -300,11 +132,9 @@ class Human < Player
 end
 
 class R2D2 < Player
-  # rubocop:disable Lint/MissingSuper
   def initialize
     @name = TEXT['computer_r2d2']
   end
-  # rubocop:enable Lint/MissingSuper
 
   def choose(board)
     board.empty_squares.sample
@@ -312,11 +142,9 @@ class R2D2 < Player
 end
 
 class Sonny < Player
-  # rubocop:disable Lint/MissingSuper
   def initialize
     @name = TEXT['computer_sonny']
   end
-  # rubocop:enable Lint/MissingSuper
 
   def choose(board)
     immediate_win = board.open_square(board.computer_marker)
@@ -331,17 +159,12 @@ class Sonny < Player
 end
 
 class Hal < Player
-  # rubocop:disable Lint/MissingSuper
   def initialize
     @name = TEXT['computer_hal']
     @choice = nil
   end
-  # rubocop:enable Lint/MissingSuper
 
   def choose(board)
-    # Guard clause prevents long think-time on first move
-    return [9, 5].sample if board.empty_squares.size == 9
-
     minimax(board)
     @choice
   end
@@ -444,97 +267,101 @@ class Cursor
   end
 end
 
-class TTTGame
-  include Displayable
-  include Promptable
+class UserInterface
+  FG_BLACK = "\e[30m"
+  BG_WHITE = "\e[47m"
+  RESET = "\e[0m"
 
-  attr_reader :board, :quit, :human, :computer, :scores
+  BOARD_SKELETON = TEXT['board_skeleton'].join.freeze
 
   def initialize
     @cursor = Cursor.new
-    @human = Human.new
-    @board = Board.new
-    @scores = {
-      human: 0,
-      computer: 0,
-      tie: 0
-    }
   end
 
-  def play
-    display_welcome
-    user_dependent_setup
-    main_game
-    display_scores
-    display_goodbye
+  def announce_opponent(computer)
+    puts TEXT['announce_opponent'] % { computer_name: computer.name }
   end
 
-  private
-
-  def computer_moves
-    move = computer.choose(board)
-    board[move] = board.computer_marker
-    board.active_turn = :human
-  end
-
-  def game_over?
-    board.full? || board.someone_won?
-  end
-
-  def human_moves
-    move = read_raw_input
-    @quit = true if move == :quit
-
-    return unless board.empty_squares.include?(move)
-
-    board[move] = board.human_marker
-    reset_cursor
-    board.active_turn = :computer
-  end
-
-  def play_again?
-    draw_board(cursor: false)
-    display_winner
-    answer = prompt_for_play_again
-    answer == TEXT['affirmative']
-  end
-
-  def play_game
-    loop do
-      display_board
-      player_moves
-      break if game_over? || quit
-    end
-  end
-
-  def player_moves
-    if board.human_turn?
-      human_moves
+  def announce_winner(human, computer, board)
+    if board.human_won?
+      puts TEXT['announce_winner_won'] % { player_name: human.name }
+    elsif board.computer_won?
+      puts TEXT['announce_winner_won'] % { player_name: computer.name }
     else
-      computer_moves
+      puts TEXT['announce_winner_tie']
     end
   end
 
-  def main_game
-    init_tui
+  def display_scores(final_scores, human, computer)
+    puts TEXT['display_scores_preamble']
+    puts TEXT['display_scores_won'] % { player_name: human.name,
+      game_or_games: pluralize(final_scores[:human]) }
+    puts TEXT['display_scores_won'] % { player_name: computer.name,
+      game_or_games: pluralize(final_scores[:computer]) }
+    puts TEXT['display_scores_tie'] %
+      { game_or_games: pluralize(final_scores[:tie]) }
+  end
+
+  def draw_board(human, computer, board, cursor: true)
+    $stdout.clear_screen
+    draw_header(human, computer, board)
+    draw_skeleton
+    draw_squares(board)
+    draw_footer(board, computer)
+    draw_cursor(board) if cursor
+  end
+
+  def goodbye
+    puts TEXT['goodbye']
+  end
+
+  def init_tui
+    system('tput init')
+    system('tput civis')
+    $stdout.clear_screen
+  end
+
+  def prompt(prompt_text, options, error_text)
+    puts prompt_text
+    answer = nil
     loop do
-      play_game
-      break if quit
-      update_scores
-      break unless play_again?
-      reset
+      answer = gets.chomp.strip.downcase
+      break if options.include?(answer)
+      puts error_text
     end
-  ensure
-    revert_terminal
+    answer[0]
   end
 
-  def move_cursor(char)
-    case char.downcase
-    when 'h' then @cursor.left
-    when 'j' then @cursor.down
-    when 'k' then @cursor.up
-    when 'l' then @cursor.right
+  def prompt_for_difficulty
+    prompt(TEXT['prompt_difficulty_text'], TEXT['prompt_difficulty_options'],
+           TEXT['prompt_difficulty_error'])
+  end
+
+  def prompt_for_marker
+    prompt(TEXT['prompt_marker_text'], TEXT['prompt_marker_options'],
+           TEXT['prompt_marker_error'])
+  end
+
+  def prompt_for_name
+    puts TEXT['prompt_name_text']
+    answer = nil
+    loop do
+      answer = gets.chomp.strip
+      break unless answer.empty?
+      puts TEXT['prompt_name_error']
     end
+    answer
+  end
+  
+  def prompt_for_play_again
+    prompt(TEXT['prompt_play_again_text'], TEXT['prompt_play_again_options'],
+           TEXT['prompt_play_again_error'])
+  end
+
+  def prompt_for_who_goes_first
+    prompt(TEXT['prompt_who_goes_first_text'],
+           TEXT['prompt_who_goes_first_options'],
+           TEXT['prompt_who_goes_first_error'])
   end
 
   def read_raw_input
@@ -551,8 +378,163 @@ class TTTGame
     @cursor.x, @cursor.y = Cursor::SQUARE_POSITIONS[5]
   end
 
+  def revert_terminal
+    system('tput cnorm')
+    $stdin.echo = true
+    $stdout.clear_screen
+  end
+
+  def welcome
+    $stdout.clear_screen
+    puts TEXT['welcome']
+  end
+
+  private
+
+  def draw_cursor(board)
+    set_pos(@cursor.x, @cursor.y)
+    print("#{FG_BLACK}#{BG_WHITE}#{board[@cursor.square]}#{RESET}")
+    set_pos(1, 17)
+  end
+
+  def draw_footer(board, computer)
+    if board.human_turn? && !board.end_state?
+      set_pos(1, 15)
+      print TEXT['draw_footer_controls']
+      print TEXT['draw_footer_quit']
+    elsif !board.end_state?
+      set_pos(1, 15)
+      print TEXT['computer_is_thinking'] %
+        { computer_name: computer.name }
+    else
+      set_pos(1, 15)
+    end
+  end
+
+  def draw_header(human, computer, board)
+    set_pos(1, 1)
+    print TEXT['draw_header'] % { human_name: human.name,
+      human_marker: board.human_marker, computer_name: computer.name,
+      computer_marker: board.computer_marker }
+  end
+
+  def draw_skeleton
+    set_pos(1, 3)
+    print(BOARD_SKELETON)
+  end
+
+  def draw_squares(board)
+    Cursor::SQUARE_POSITIONS.values.each_with_index do |(x, y), index|
+      set_pos(x, y)
+      print(board[index + 1])
+    end
+  end
+
+  def move_cursor(char)
+    case char.downcase
+    when 'h' then @cursor.left
+    when 'j' then @cursor.down
+    when 'k' then @cursor.up
+    when 'l' then @cursor.right
+    end
+  end
+
+  def pluralize(number)
+    if number == 1
+      TEXT['pluralize_single'] % { number: number }
+    else
+      TEXT['pluralize_plural'] % { number: number }
+    end
+  end
+
+  def set_pos(x, y)
+    print("\e[#{y};#{x}H")
+  end
+end
+
+class TTTGame
+  attr_reader :user_interface, :board, :quit, :human, :computer
+
+  def initialize
+    @user_interface = UserInterface.new
+    @human = Human.new
+    @board = Board.new
+    @scores = {
+      human: 0,
+      computer: 0,
+      tie: 0
+    }
+  end
+
+  def play
+    user_interface.welcome
+    user_dependent_setup
+    main_game
+    show_scores
+    user_interface.goodbye
+  end
+
+  private
+
+  def computer_moves
+    move = computer.choose(board)
+    board[move] = board.computer_marker
+    board.active_turn = :human
+  end
+
+  def game_over?
+    board.full? || board.someone_won?
+  end
+
+  def human_moves
+    move = user_interface.read_raw_input
+    @quit = true if move == :quit
+
+    return unless board.empty_squares.include?(move)
+
+    board[move] = board.human_marker
+    user_interface.reset_cursor
+    board.active_turn = :computer
+  end
+
+  def play_again?
+    user_interface.draw_board(human, computer, board, cursor: false)
+    user_interface.announce_winner(human, computer, board)
+    answer = user_interface.prompt_for_play_again
+    answer == TEXT['affirmative']
+  end
+
+  def play_game
+    loop do
+      show_board
+      player_moves
+      break if game_over? || quit
+    end
+  end
+
+  def player_moves
+    if board.human_turn?
+      human_moves
+    else
+      computer_moves
+    end
+  end
+
+  def main_game
+    user_interface.init_tui
+    loop do
+      play_game
+      break if quit
+      update_scores
+      break unless play_again?
+      reset
+    end
+  ensure
+    user_interface.revert_terminal
+  end
+
   def reset
-    board.reset_squares
+    board.reset_squares 
     if @first_player == :human
       @first_player = :computer
       board.active_turn = :computer
@@ -563,17 +545,17 @@ class TTTGame
   end
 
   def set_difficulty_level
-    difficulty = prompt_for_difficulty
+    difficulty = user_interface.prompt_for_difficulty
     @computer = case difficulty
                 when TEXT['difficulty_easy']   then R2D2.new
                 when TEXT['difficulty_medium'] then Sonny.new
                 when TEXT['difficulty_hard']   then Hal.new
                 end
-    display_opponent
+    user_interface.announce_opponent(computer)
   end
 
   def set_player_markers
-    marker = prompt_for_marker
+    marker = user_interface.prompt_for_marker
     if marker == 'x'
       board.human_marker = 'X'
       board.computer_marker = 'O'
@@ -584,23 +566,35 @@ class TTTGame
   end
 
   def set_human_name
-    answer = prompt_for_name
+    answer = user_interface.prompt_for_name
     human.name = answer
   end
 
   def set_who_goes_first
-    answer = prompt_for_who_goes_first
+    answer = user_interface.prompt_for_who_goes_first
     @first_player = (answer == TEXT['human'] ? :human : :computer)
     board.active_turn = @first_player
   end
 
+  def show_board
+    if board.human_turn?
+      user_interface.draw_board(human, computer, board)
+    else
+      user_interface.draw_board(human, computer, board, cursor: false)
+    end
+  end
+
+  def show_scores
+    user_interface.display_scores(@scores, human, computer)
+  end
+
   def update_scores
     if board.human_won?
-      scores[:human] += 1
+      @scores[:human] += 1
     elsif board.computer_won?
-      scores[:computer] += 1
+      @scores[:computer] += 1
     else
-      scores[:tie] += 1
+      @scores[:tie] += 1
     end
   end
 

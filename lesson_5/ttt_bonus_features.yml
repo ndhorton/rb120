@@ -1,5 +1,6 @@
 {
   english: {
+    affirmative: "y",
     board_skeleton: [
       "     |     |\n",
       "     |     |\n",
@@ -12,6 +13,41 @@
       "     |     |\n",
       "     |     |\n",
       "     |     |\n"
-    ]
+    ],
+    computer_is_thinking: "%{computer_name} is thinking...",
+    computer_hal: "Hal",
+    computer_r2d2: "R2D2",
+    computer_sonny: "Sonny",
+    difficulty_easy: "e",
+    difficulty_medium: "m",
+    difficulty_hard: "h",
+    display_opponent: "Your opponent today will be %{computer_name}",
+    display_scores_preamble: "At the end of play:",
+    display_scores_tie: "  with %{game_or_games} tied.\n\n",
+    display_scores_won: "  %{player_name} won %{game_or_games},",
+    display_winner_tie: "It's a tie!",
+    display_winner_won: "%{player_name} won!",
+    draw_footer_controls: "k/j - up/down, h/l - left/right, <space> to mark a square\n",
+    draw_footer_quit: "q to quit game\n",
+    draw_header: "%{human_name} is %{human_marker}. %{computer_name} is %{computer_marker}.\n\n",
+    human: "h",
+    goodbye: "Thanks for playing Tic Tac Toe! Goodbye!",
+    pluralize_plural: "%{number} games",
+    pluralize_single: "%{number} game",
+    prompt_difficulty_error: "Sorry, must be (e)asy, (m)edium, or (h)ard",
+    prompt_difficulty_options: [e, m, h, easy, medium, hard],
+    prompt_difficulty_text: "Would you like an (e)asy, (m)edium, or (h)ard opponent?",
+    prompt_marker_error: "Sorry, must be X or O",
+    prompt_marker_options: ['x', 'o'],
+    prompt_marker_text: "Would you like to play as X or O?",
+    prompt_name_error: "Sorry, name must be at least one character",
+    prompt_name_text: "Please enter your name:",
+    prompt_play_again_error: "Sorry, must be y or n",
+    prompt_play_again_options: ['y', 'n', 'yes', 'no'],
+    prompt_play_again_text: "Would you like to play again (y or n)?",
+    prompt_who_goes_first_error: "Sorry, must be (h)uman or (c)omputer",
+    prompt_who_goes_first_options: [h, c, human, computer],
+    prompt_who_goes_first_text: "Which player should go first, (h)uman or (c)omputer?",
+    welcome: "Welcome to Tic Tac Toe!"
   }
 }
