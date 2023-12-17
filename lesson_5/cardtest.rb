@@ -108,3 +108,6 @@ end
 
 # so you can fit 6 cards per terminal line
 # so in some rare cases you could need two card lines for your deck and two for dealer
+# so something like 
+#`card_groups = output_cards.each_slice(6).to_a`
+# Then treat each card_group as a card line
