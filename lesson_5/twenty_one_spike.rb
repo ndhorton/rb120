@@ -193,6 +193,7 @@ class TwentyOne
       dealer_turn unless player.busted?
       show_result
       break unless play_again?
+      reset
     end
     goodbye
   end
@@ -207,6 +208,13 @@ class TwentyOne
   def goodbye
     system('clear')
     puts "Thanks for playing Twenty-One! Good bye!"
+  end
+
+  def reset
+    @deck = Deck.new
+    player.reset(deck)
+    dealer.reset(deck)
+    deal_cards
   end
 
   def play_again?
@@ -288,7 +296,7 @@ class TwentyOne
     system('clear')
     puts "Dealer's hand: (#{dealer.total} points)"
     dealer.show_hand
-    puts "#{player.name}'s hand:"
+    puts "#{player.name}'s hand: (#{player.total} points)"
     player.show_hand
     if dealer.busted?
       puts "The dealer is busted! You won!"
