@@ -57,10 +57,10 @@ FACES = {
 }
 
 TYPES = {
-  ace: 'ace',
-  king: 'royal',
-  queen: 'royal',
-  jack: 'royal',
+  'A' => 'ace',
+  'K' => 'royal',
+  'Q' => 'royal',
+  'J' => 'royal',
   10 => 'ten',
   9 => 'nine',
   8 => 'eight',
@@ -75,7 +75,7 @@ TYPES = {
 input_cards = [[5, :diamonds], [5, :clubs], [:ace, :spades], [:jack, :clubs], [:queen, :hearts]]
 output_cards = []
 
-TEXT_ART = Psych.load_file("#{__dir__}/twenty_one.yaml")
+TEXT_ART = Psych.load_file("#{__dir__}/twenty_one_card_art.yaml")
 # input_cards.each do |face, suit|
 #   type = TYPES[face]
 #   face = FACES[face]
@@ -91,12 +91,13 @@ TEXT_ART = Psych.load_file("#{__dir__}/twenty_one.yaml")
 #   puts line
 # end
 cards = []
-cards << TEXT_ART['royal'].map { |line| line % {face: 'K', suit: HOLLOW_CLUB} }
-cards << TEXT_ART['royal'].map { |line| line % {face: 'K', suit: HOLLOW_CLUB} }
+# cards << TEXT_ART['royal'].map { |line| line % {face: 'K', suit: HOLLOW_CLUB} }
+# cards << TEXT_ART['royal'].map { |line| line % {face: 'K', suit: HOLLOW_CLUB} }
 cards << TEXT_ART['ten'].map { |line| line % {face: "#{RED}10#{RESET}", suit: HEART } }
-cards << TEXT_ART['nine'].map { |line| line % {face: '9', suit: HOLLOW_SPADE} }
+cards << TEXT_ART['five'].map { |line| line % {face: '5', suit: HOLLOW_SPADE} }
 cards << TEXT_ART['seven'].map { |line| line % {face: "#{RED}7#{RESET}", suit: DIAMOND }}
-cards << TEXT_ART['turned']
+# cards << TEXT_ART['turned']
+# cards << TEXT_ART['turned']
 
 (0...cards.first.size).each do |line_index|
   line = ''

@@ -1,0 +1,138 @@
+[clear screen]
+Twenty-One [banner]
+
+Welcome to Twenty-One!
+
+Please enter your name: Nick
+Would you like to see the rules (y or n)? y
+
+[page output]
+
+Twenty-One is a card game for one player and one dealer.
+
+The winner of the game is the participant whose hand is worth closest
+to 21 points without exceeding 21 points.
+
+All numeric face cards (2 to 10) are worth their face value in points.
+Royal cards (Jack, King, Queen) are worth 10 points.
+An Ace is worth either 1 or 11 depending on which is more valuable to the
+participant's hand. If gaining 11 points for the Ace would cause the
+hand to be worth more than 21 points, then the Ace will be worth 1 point.
+Otherwise, the Ace will be worth 11 points.
+
+Initially, the dealer and the player are dealt two cards each.
+
+The dealer turns over one card to be visible to the player. All the
+player's cards are visible to the player.
+
+The player goes first, choosing either to hit (receive another
+card) or to stay (end their turn). The player can hit as many times as
+desired until their point total exceeds 21, at which point the player
+is declared bust and the dealer wins.
+
+Once the player has decided to stay, or has gone bust, it is the dealer's turn.
+The dealer's turn is the same as the player's and ends when the dealer
+decides to stay, or when the dealer goes bust. If the dealer goes bust, the
+player wins.
+
+Assuming both participants have stayed before their hand exceeds 21 points,
+their hands are then compared, and the participant whose hand is closest to
+21 points is declared the winner.
+
+[end page output]
+
+[clear screen] <- display loops to here, cards are added to right of player hand, then below
+
+Dealer's hand:
+┌─────────┐ ┌─────────┐
+│10       │ │█░█░█░█░█│
+│ ♥     ♥ │ │░█░█░█░█░│
+│ ♥  ♥  ♥ │ │█░█░█░█░█│
+│         │ │░█░█░█░█░│
+│ ♥  ♥  ♥ │ │█░█░█░█░█│
+│ ♥     ♥ │ │░█░█░█░█░│
+│       10│ │█░█░█░█░█│
+└─────────┘ └─────────┘
+Nick's hand: (19 points)
+┌─────────┐ ┌─────────┐
+│K        │ │9        │
+│  ♧      │ │  ♤   ♤  │
+│         │ │  ♤   ♤  │
+│         │ │    ♤    │
+│         │ │  ♤   ♤  │
+│      ♧  │ │  ♤   ♤  │
+│        K│ │        9│
+└─────────┘ └─────────┘
+Would you like to (h)it or (s)tay?
+s
+
+[clear screen] <- display loops here, any dealer hit adds face-down card to right, then below
+Dealer's hand:
+┌─────────┐ ┌─────────┐
+│10       │ │█░█░█░█░█│
+│ ♥     ♥ │ │░█░█░█░█░│
+│ ♥  ♥  ♥ │ │█░█░█░█░█│
+│         │ │░█░█░█░█░│
+│ ♥  ♥  ♥ │ │█░█░█░█░█│
+│ ♥     ♥ │ │░█░█░█░█░│
+│       10│ │█░█░█░█░█│
+└─────────┘ └─────────┘
+Nick's hand: (19 points)
+┌─────────┐ ┌─────────┐
+│K        │ │9        │
+│  ♧      │ │  ♤   ♤  │
+│         │ │  ♤   ♤  │
+│         │ │    ♤    │
+│         │ │  ♤   ♤  │
+│      ♧  │ │  ♤   ♤  │
+│        K│ │        9│
+└─────────┘ └─────────┘
+Dealer is thinking... Dealer hits!
+
+[clear screen]
+Dealer's hand:
+ ┌─────────┐ ┌─────────┐ ┌─────────┐
+ │10       │ │█░█░█░█░█│ │█░█░█░█░█│
+ │  ♥   ♥  │ │░█░█░█░█░│ │░█░█░█░█░│
+ │  ♥ ♥ ♥  │ │█░█░█░█░█│ │█░█░█░█░█│
+ │         │ │░█░█░█░█░│ │░█░█░█░█░│
+ │  ♥ ♥ ♥  │ │█░█░█░█░█│ │█░█░█░█░█│
+ │  ♥   ♥  │ │░█░█░█░█░│ │░█░█░█░█░│
+ │       10│ │█░█░█░█░█│ │█░█░█░█░█│
+ └─────────┘ └─────────┘ └─────────┘
+ Nick's hand: (19 points)
+┌─────────┐ ┌─────────┐
+│K        │ │9        │
+│  ♧      │ │  ♤   ♤  │
+│         │ │  ♤   ♤  │
+│         │ │    ♤    │
+│         │ │  ♤   ♤  │
+│      ♧  │ │  ♤   ♤  │
+│        K│ │        9│
+└─────────┘ └─────────┘
+Dealer is thinking... Dealer stays...
+Dealer's hand: (22 points)
+ ┌─────────┐ ┌─────────┐ ┌─────────┐
+ │10       │ │5        │ │7        │
+ │  ♥   ♥  │ │  ♤   ♤  │ │  ♦   ♦  │
+ │  ♥ ♥ ♥  │ │         │ │    ♦    │
+ │         │ │    ♤    │ │  ♦   ♦  │
+ │  ♥ ♥ ♥  │ │         │ │         │
+ │  ♥   ♥  │ │  ♤   ♤  │ │  ♦   ♦  │
+ │       10│ │        5│ │        7│
+ └─────────┘ └─────────┘ └─────────┘
+ Nick's hand: (19 points)
+┌─────────┐ ┌─────────┐
+│K        │ │9        │
+│  ♧      │ │  ♤   ♤  │
+│         │ │  ♤   ♤  │
+│         │ │    ♤    │
+│         │ │  ♤   ♤  │
+│      ♧  │ │  ♤   ♤  │
+│        K│ │        9│
+└─────────┘ └─────────┘
+Dealer is bust! Nick wins!
+
+Would you like to play again (y or n)? n
+
+Thank you for playing Twenty-One! Good bye!
