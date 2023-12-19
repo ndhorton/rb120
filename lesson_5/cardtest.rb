@@ -56,7 +56,7 @@ FACES = {
   1 => '1'
 }
 
-TYPES = {
+VISUAL_CARDS = {
   'A' => 'ace',
   'K' => 'royal',
   'Q' => 'royal',

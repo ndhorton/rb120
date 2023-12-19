@@ -1,5 +1,7 @@
+require 'io/console'
 require 'psych'
 
+TEXT = Psych.load_file("#{__dir__}/twenty_one_text.yaml")['english']
 CARD_ART = Psych.load_file("#{__dir__}/twenty_one_card_art.yaml")
 
 VISUAL_CARDS = {
@@ -15,7 +17,7 @@ VISUAL_CARDS = {
   5 => 'five',
   4 => 'four',
   3 => 'three',
-  2 => 'two',
+  2 => 'two'
 }
 
 RED = "\e[31m"
@@ -26,14 +28,224 @@ DIAMOND = "#{RED}\u2666#{RESET}"
 CLUB = "\u2667"
 SPADE = "\u2664"
 
-SUIT_ICONS = {
-  hearts: HEART,
-  diamonds: DIAMOND,
-  clubs: CLUB,
-  spades: SPADE
-}
+module Pageable
+  private
+
+  def display_appropriate_footer(max_row, text_size)
+    color = { color: RED, reset: RESET }
+    puts
+    if max_row < text_size - 1
+      print format(TEXT['pager_scroll'], color)
+    else
+      print format(TEXT['pager_return'], color)
+    end
+  end
+
+  def display_lines(start_row, max_row, lines)
+    puts lines[start_row..max_row]
+  end
+
+  def display_page(start_row, max_row, lines)
+    $stdout.clear_screen
+    display_lines(start_row, max_row, lines)
+    display_appropriate_footer(max_row, lines.size)
+  end
+
+  def page(lines)
+    paging_loop(0, page_length, lines)
+    $stdout.clear_screen
+  end
+
+  def page_length
+    max_row, = $stdout.winsize
+    max_row - 3 # accomodate footer
+  end
+
+  def paging_loop(start_row, max_row, lines)
+    loop do
+      display_page(start_row, max_row, lines)
+      input = $stdin.getch
+      if input == ' ' && max_row < lines.size - 1
+        start_row += 1
+        max_row += 1
+      elsif input == TEXT['quit']
+        break
+      end
+    end
+  end
+end
+
+module Displayable
+  private
+
+  SUIT_ICONS = { hearts: HEART, diamonds: DIAMOND, clubs: CLUB, spades: SPADE }
+
+  def ellipsis
+    3.times do
+      print '.'
+      sleep 0.5
+    end
+  end
+
+  def goodbye
+    $stdout.clear_screen
+    show_final_scores
+    puts TEXT['goodbye']
+  end
+
+  def show_banner
+    $stdout.clear_screen
+    print RED
+    puts TEXT['banner']
+    puts RESET
+  end
+
+  def show_cards
+    $stdout.clear_screen
+    puts TEXT['dealer_partial_hand']
+    show_partial_hand(dealer.hand)
+
+    puts format(TEXT['player_hand'],
+                player_name: player.name, player_total: player.total)
+    show_hand(player.hand)
+  end
+
+  def show_dealer_busted
+    puts format(TEXT['busted_dealer'], player_name: player.name)
+  end
+
+  def show_dealer_won
+    puts TEXT['dealer_won']
+  end
+
+  def show_player_busted
+    puts format(TEXT['busted_player'], player_name: player.name)
+  end
+
+  def show_player_won
+    puts format(TEXT['player_won'], player_name: player.name)
+  end
+
+  def show_tie
+    puts TEXT['tie']
+  end
+
+  def show_final_cards
+    $stdout.clear_screen
+    puts format(TEXT['dealer_full_hand'], final_cards_data)
+    show_hand(dealer.hand)
+    puts format(TEXT['player_hand'], final_cards_data)
+    show_hand(player.hand)
+  end
+
+  def show_final_scores
+    print format(TEXT['final_scores'], final_score_data)
+  end
+
+  def show_hand(hand)
+    hand.each_slice(6) do |card_group|
+      visual_cards = represent_cards(card_group)
+      (0...visual_cards.first.size).each do |line_index|
+        line = ''
+        visual_cards.each { |card| line << ' ' << card[line_index] }
+        puts line
+      end
+    end
+  end
+
+  def show_partial_hand(hand)
+    cards = [represent_first_card(hand)]
+    (hand.size - 1).times { cards << CARD_ART['turned'] }
+    cards.each_slice(6) do |visual_cards|
+      (0...visual_cards.first.size).each do |line_index|
+        line = ''
+        visual_cards.each { |card| line << ' ' << card[line_index] }
+        puts line
+      end
+    end
+  end
+
+  def show_result
+    show_final_cards
+    declare_winner
+  end
+
+  def represent_cards(chunk_of_hand)
+    chunk_of_hand.map do |card|
+      art_key = VISUAL_CARDS[card.face]
+      card_value = card.to_s
+      suit_icon = SUIT_ICONS[card.suit]
+      CARD_ART[art_key].map do |line|
+        format(line, face: card_value, suit: suit_icon)
+      end
+    end
+  end
+
+  def represent_first_card(hand)
+    first_card = hand.first
+    art_key = VISUAL_CARDS[first_card.face]
+    card_value = first_card.to_s
+    suit_icon = SUIT_ICONS[first_card.suit]
+    CARD_ART[art_key].map do |line|
+      format(line, face: card_value, suit: suit_icon)
+    end
+  end
+
+  def welcome
+    show_banner
+    puts TEXT['welcome_message']
+  end
+end
+
+module Promptable
+  private
+
+  def play_again?
+    puts TEXT['play_again']
+    answer = nil
+    loop do
+      answer = gets.chomp.downcase
+      break if TEXT['yes_or_no'].include?(answer)
+      puts TEXT['yes_or_no_error']
+    end
+    answer[0] == 'y'
+  end
+
+  def prompt_for_player_name
+    puts TEXT['name_message']
+    answer = nil
+    loop do
+      answer = gets.chomp.strip
+      break unless answer.empty?
+      puts TEXT['name_error']
+    end
+    answer
+  end
+
+  def prompt_for_hit_or_stay
+    puts TEXT['hit_or_stay_message']
+    answer = nil
+    loop do
+      answer = gets.chomp.strip.downcase
+      break if TEXT['hit_or_stay_options'].include?(answer)
+      puts TEXT['hit_or_stay_error']
+    end
+    answer
+  end
+
+  def see_rules?
+    answer = nil
+    loop do
+      answer = gets.chomp.downcase
+      break if TEXT['yes_or_no'].include?(answer)
+      puts TEXT['yes_or_no_error']
+    end
+    answer.start_with?(TEXT['affirmative'])
+  end
+end
 
 class Participant
+  attr_accessor :name
   attr_reader :hand
 
   def initialize(common_deck)
@@ -48,29 +260,18 @@ class Participant
     hand << @deck.deal
   end
 
-  def show_hand
-    hand.each_slice(6) do |chunk_of_hand|
-      visual_cards = represent_cards(chunk_of_hand)
-      (0...visual_cards.first.size).each do |line_index|
-        line = ''
-        visual_cards.each { |card| line << ' ' << card[line_index] }
-        puts line
-      end
-    end
-  end
-
   def stay
-    @stuck = true
+    @stay = true
   end
 
-  def stays?
-    @stuck
+  def stayed?
+    @stay
   end
 
   def reset(common_deck)
     @deck = common_deck
     @hand = []
-    @stuck = false
+    @stay = false
   end
 
   def total
@@ -78,50 +279,7 @@ class Participant
 
     other_card_sum = other_cards.reduce(0) { |acc, card| acc + card.max_value }
     aces.reduce(other_card_sum) do |acc, card|
-      (acc + card.max_value > 21) ? (acc + 1) : (acc + card.max_value)
-    end
-  end
-
-  private
-
-  def represent_cards(chunk_of_hand)
-    chunk_of_hand.map do |card|
-      art_key = VISUAL_CARDS[card.face]
-      card_value = card.to_s
-      suit_icon = SUIT_ICONS[card.suit]
-      CARD_ART[art_key].map do |line|
-        format(line, face: card_value, suit: suit_icon)
-      end
-    end
-  end
-end
-
-class Player < Participant
-  attr_accessor :name
-end
-
-class Dealer < Participant
-  def show_partial_hand
-    cards = [represent_first_card]
-    (hand.size - 1).times { cards << CARD_ART['turned'] }
-    cards.each_slice(6) do |visual_cards|
-      (0...visual_cards.first.size).each do |line_index|
-        line = ''
-        visual_cards.each { |card| line << ' ' << card[line_index] }
-        puts line
-      end
-    end
-  end
-
-  private
-
-  def represent_first_card
-    first_card = hand.first
-    art_key = VISUAL_CARDS[first_card.face]
-    card_value = first_card.to_s
-    suit_icon = SUIT_ICONS[first_card.suit]
-    CARD_ART[art_key].map do |line|
-      format(line, face: card_value, suit: suit_icon)
+      acc + card.max_value > 21 ? (acc + 1) : (acc + card.max_value)
     end
   end
 end
@@ -134,7 +292,7 @@ class Deck
     @cards = []
     setup_cards
   end
-  
+
   def deal
     @cards.pop
   end
@@ -159,7 +317,7 @@ class Card
 
   def initialize(face, suit)
     @face = face
-    @suit = suit 
+    @suit = suit
   end
 
   def max_value
@@ -176,57 +334,32 @@ class Card
 end
 
 class TwentyOne
-  attr_reader :player, :dealer, :deck
+  include Displayable
+  include Pageable
+  include Promptable
 
   def initialize
     @deck = Deck.new
-    @player = Player.new(deck)
-    @dealer = Dealer.new(deck)
+    @player = Participant.new(deck)
+    @dealer = Participant.new(deck)
+    @scores = {
+      player: 0,
+      dealer: 0,
+      tie: 0
+    }
   end
 
-  def start
+  def play
     welcome
     set_player_name
-    deal_cards
-    loop do
-      player_turn
-      dealer_turn unless player.busted?
-      show_result
-      break unless play_again?
-      reset
-    end
+    rules_check
+    game_loop
     goodbye
   end
 
   private
 
-  def welcome
-    system('clear')
-    puts "Welcome to Twenty-One!"
-  end
-
-  def goodbye
-    system('clear')
-    puts "Thanks for playing Twenty-One! Good bye!"
-  end
-
-  def reset
-    @deck = Deck.new
-    player.reset(deck)
-    dealer.reset(deck)
-    deal_cards
-  end
-
-  def play_again?
-    puts "Would you like to play again (y or n)?"
-    answer = nil
-    loop do
-      answer = gets.chomp.downcase
-      break if ['y', 'n', 'yes', 'no'].include?(answer)
-      puts "Sorry, must be y or n"
-    end
-    answer[0] == 'y'
-  end
+  attr_reader :player, :dealer, :deck, :scores
 
   def deal_cards
     2.times do
@@ -235,81 +368,112 @@ class TwentyOne
     end
   end
 
+  def dealer_hits
+    puts TEXT['dealer_hits']
+    sleep 1
+    dealer.hit
+  end
+
+  def dealer_stays
+    puts TEXT['dealer_stays']
+    dealer.stay
+    sleep 1
+  end
+
   def dealer_turn
-    loop do
+    until dealer.busted? || dealer.stayed?
       show_cards
-      print "Dealer is thinking"
-      3.times do
-        print '.'
-        sleep 0.5
-      end
+      print TEXT['dealer_thinking']
+      ellipsis
       if dealer.total < 17
-        print " Dealer hits!\n"
-        sleep 1
-        dealer.hit
-        next
+        dealer_hits
+      else
+        dealer_stays
       end
-      print " Dealer stays!\n"
-      dealer.stay
-      sleep 1
-      break
+    end
+  end
+
+  def dealer_won?
+    !dealer.busted? && (player.total < dealer.total)
+  end
+
+  def declare_winner
+    if player.busted?    then show_player_busted
+    elsif dealer.busted? then show_dealer_busted
+    elsif player_won?    then show_player_won
+    elsif dealer_won?    then show_dealer_won
+    else
+      show_tie
+    end
+  end
+
+  def final_cards_data
+    {
+      player_name: player.name,
+      player_total: player.total,
+      dealer_total: dealer.total
+    }
+  end
+
+  def final_score_data
+    {
+      player_name: player.name,
+      player: scores[:player],
+      dealer: scores[:dealer],
+      tie: scores[:tie]
+    }
+  end
+
+  def game_loop
+    loop do
+      deal_cards
+      player_turn
+      dealer_turn unless player.busted?
+      tally_scores
+      show_result
+      break unless play_again?
+      reset
     end
   end
 
   def player_turn
     loop do
       show_cards
-      puts "Do you want to (h)it or (s)tay?"
-      answer = nil
-      loop do
-        answer = gets.chomp.strip.downcase
-        break if %w(h s hit stay).include?(answer)
-        puts "Sorry, must be (h)it or (s)tay"
-      end
-      player.hit if answer.start_with? 'h'
-      player.stay if answer.start_with? 's'
-      break if player.stays? || player.busted?
+      answer = prompt_for_hit_or_stay
+      player.hit if answer.start_with? TEXT['hit']
+      player.stay if answer.start_with? TEXT['stay']
+      break if player.stayed? || player.busted?
     end
+  end
+
+  def player_won?
+    !player.busted? && (player.total > dealer.total)
+  end
+
+  def reset
+    @deck = Deck.new
+    player.reset(deck)
+    dealer.reset(deck)
+  end
+
+  def rules_check
+    puts TEXT['rules_check']
+    page(TEXT['rules']) if see_rules?
   end
 
   def set_player_name
-    puts "Please enter your name: "
-    answer = nil
-    loop do
-      answer = gets.chomp.strip
-      break unless answer.empty?
-      puts "Sorry, name must contain at least one character"
-    end
-    player.name = answer
+    player.name = prompt_for_player_name
   end
 
-  def show_cards
-    system('clear')
-    puts "Dealer's hand: (? points)"
-    dealer.show_partial_hand
-
-    puts "#{player.name}'s hand: (#{player.total} points)"
-    player.show_hand
-  end
-
-  def show_result
-    system('clear')
-    puts "Dealer's hand: (#{dealer.total} points)"
-    dealer.show_hand
-    puts "#{player.name}'s hand: (#{player.total} points)"
-    player.show_hand
-    if dealer.busted?
-      puts "The dealer is busted! You won!"
-    elsif player.busted?
-      puts "You are busted! The dealer won!"
-    elsif player.total > dealer.total
-      puts "You won!"
-    elsif player.total < dealer.total
-      puts "The dealer won!"
+  def tally_scores
+    if dealer.busted? || player_won?
+      scores[:player] += 1
+    elsif player.busted? || dealer_won?
+      scores[:dealer] += 1
     else
-      puts "It's a tie!"
+      scores[:tie] += 1
     end
   end
 end
 
-TwentyOne.new.start
+TwentyOne.new.play
