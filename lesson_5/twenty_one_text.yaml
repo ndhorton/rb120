@@ -17,7 +17,15 @@
       dealer_stays: " Dealer stays!",
       dealer_thinking: "Dealer is thinking",
       dealer_won: "The dealer won!",
-      final_scores: "At the end of play,\n\t%{player_name} has won %{player} games,\n\tthe dealer has won %{dealer} games,\n\tand %{tie} games were tied.\n\n",
+      final_scores: [
+        "At the end of play,",
+        "\t%{player_name} has won %{player},",
+        "\tthe dealer has won %{dealer},",
+        "\twith %{tie} tied.\n\n"
+      ],
+      game: "game",
+      games: "games",
+      games_none: "no games",
       goodbye: "Thanks for playing Twenty-One! Good bye!",
       hit: 'h',
       hit_or_stay_message: "Do you want to (h)it or (s)tay?",

@@ -52,8 +52,12 @@ module Pageable
   end
 
   def page(lines)
+    system('tput init')
+    system('tput civis')
     paging_loop(0, page_length, lines)
     $stdout.clear_screen
+  ensure
+    system('tput cnorm')
   end
 
   def page_length
@@ -139,7 +143,8 @@ module Displayable
   end
 
   def show_final_scores
-    print format(TEXT['final_scores'], final_score_data)
+    data = final_score_data
+    TEXT['final_scores'].each { |line| puts format(line, data) }
   end
 
   def show_hand(hand)
@@ -163,11 +168,6 @@ module Displayable
         puts line
       end
     end
-  end
-
-  def show_result
-    show_final_cards
-    declare_winner
   end
 
   def represent_cards(chunk_of_hand)
@@ -361,6 +361,11 @@ class TwentyOne
 
   attr_reader :player, :dealer, :deck, :scores
 
+  def announce_winner
+    show_final_cards
+    declare_winner
+  end
+
   def deal_cards
     2.times do
       player.hand << deck.deal
@@ -418,9 +423,9 @@ class TwentyOne
   def final_score_data
     {
       player_name: player.name,
-      player: scores[:player],
-      dealer: scores[:dealer],
-      tie: scores[:tie]
+      player: pluralize_game(scores[:player]),
+      dealer: pluralize_game(scores[:dealer]),
+      tie: pluralize_game(scores[:tie])
     }
   end
 
@@ -430,7 +435,7 @@ class TwentyOne
       player_turn
       dealer_turn unless player.busted?
       tally_scores
-      show_result
+      announce_winner
       break unless play_again?
       reset
     end
@@ -448,6 +453,15 @@ class TwentyOne
 
   def player_won?
     !player.busted? && (player.total > dealer.total)
+  end
+
+  def pluralize_game(number_of_games)
+    case number_of_games
+    when 0 then TEXT['games_none']
+    when 1 then "#{number_of_games} #{TEXT['game']}"
+    else
+      "#{number_of_games} #{TEXT['games']}"
+    end
   end
 
   def reset
