@@ -275,12 +275,10 @@ class Participant
   end
 
   def total
-    aces, other_cards = @hand.partition { |card| card.face == 'A' }
-
-    other_card_sum = other_cards.reduce(0) { |acc, card| acc + card.max_value }
-    aces.reduce(other_card_sum) do |acc, card|
-      acc + card.max_value > 21 ? (acc + 1) : (acc + card.max_value)
-    end
+    result = hand.sum(&:max_value)
+    number_of_aces = hand.count { |card| card.face == 'A' }
+    number_of_aces.times { result -= 10 if result > 21 }
+    result
   end
 end
 
