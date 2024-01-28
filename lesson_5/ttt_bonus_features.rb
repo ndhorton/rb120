@@ -63,8 +63,8 @@ module Displayable
   end
 
   def draw_cursor
-    set_pos(@cursor.x, @cursor.y)
-    print("#{FG_BLACK}#{BG_WHITE}#{board[@cursor.square]}#{RESET}")
+    set_pos(cursor.x, cursor.y)
+    print("#{FG_BLACK}#{BG_WHITE}#{board[cursor.square]}#{RESET}")
     set_pos(1, 17)
   end
 
@@ -453,8 +453,6 @@ class TTTGame
   include Displayable
   include Promptable
 
-  attr_reader :board, :quit, :human, :computer, :scores
-
   def initialize
     @cursor = Cursor.new
     @human = Human.new
@@ -480,6 +478,10 @@ class TTTGame
   end
 
   private
+
+
+  attr_reader :board, :quit, :human, :computer, :scores
+  attr_accessor :cursor
 
   def computer_moves
     move = computer.choose(board)
@@ -540,17 +542,17 @@ class TTTGame
 
   def move_cursor(char)
     case char.downcase
-    when 'h' then @cursor.left
-    when 'j' then @cursor.down
-    when 'k' then @cursor.up
-    when 'l' then @cursor.right
+    when 'h' then cursor.left
+    when 'j' then cursor.down
+    when 'k' then cursor.up
+    when 'l' then cursor.right
     end
   end
 
   def read_raw_input
     char = $stdin.getch
 
-    return @cursor.square if char == ' '
+    return cursor.square if char == ' '
     return :quit if char == 'q'
 
     move_cursor(char)
@@ -558,7 +560,7 @@ class TTTGame
   end
 
   def reset_cursor
-    @cursor.x, @cursor.y = Cursor::SQUARE_POSITIONS[5]
+    cursor.x, cursor.y = Cursor::SQUARE_POSITIONS[5]
   end
 
   def reset
