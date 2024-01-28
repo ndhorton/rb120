@@ -99,7 +99,7 @@ module Displayable
     end
   end
 
-  def init_tui
+  def start_terminal_environment
     if $stdout.winsize.first < 17
       raise ConsoleWindowError, TEXT['winsize_error_message']
     end
@@ -465,16 +465,14 @@ class TTTGame
   end
 
   def play
-    begin
-      display_welcome
-      user_dependent_setup
-      main_game
-      display_scores
-      display_goodbye
-    rescue ConsoleWindowError => e
-      puts e.message
-      puts TEXT['winsize_error_rescue']
-    end
+    display_welcome
+    user_dependent_setup
+    main_game
+    display_scores
+    display_goodbye
+  rescue ConsoleWindowError => e
+    puts e.message
+    puts TEXT['winsize_error_rescue']
   end
 
   private
@@ -528,7 +526,7 @@ class TTTGame
   end
 
   def main_game
-    init_tui
+    start_terminal_environment
     loop do
       play_game
       break if quit
