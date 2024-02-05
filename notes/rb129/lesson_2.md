@@ -134,13 +134,91 @@ From wikipedia entry for Class: "Object-oriented design uses the access specifie
 
 ## 2:9: Lecture: Collaborator Objects
 
-"Classes group common behaviors and objects encapsulate state. The object's state is saved in an object's instance variables. Instance methods can operate on the instance variables. Usually, the state is a string or number. For example, a `Person` object's `name` attribute can be save into a @name instance variable as a string."
+"Classes group common behaviors and objects encapsulate state. The object's state is saved in an object's instance variables. Instance methods can operate on the instance variables."
 
 "Objects that are stored as state within another object are also called "**collaborator objects**". We call such objects collaborators because **they work in conjunction (or in collaboration) with the class they are associated with**."
+
+Note, at this point (above), we are talking about objects of custom classes. Since collaboration is a design consideration things like strings and integers are really implementation details and not worth noting on a CRC card (even if in Ruby these primitive types are all objects of some core class). Similarly, if a class we are designing uses an array to store objects of a custom class, it is the custom class that the significant collaborator rather than Array.
+
+Note also that it sounds like collaboration here can be a unidirectional or bidirectional relationship ('objects that are stored as state within another object are also called "collaborator objects"'). Essentially, we are dealing with *association* without the finer distinctions (composition, aggregation). We can rule out mere dependencies perhaps, when an object is merely passed in to another object's method without a reference being retained in the receiver's state, though this is not entirely clear from the pinned discussions on the forum.
+
+However immediately after this we get
+
+"When we work with collaborator objects, they are usually custom objects... yet, collaborator objects aren't strictly custom objects. Even the string object... is technically a collaborator object"
+
+I think what is meant is that collaboration is a design consideration. The classes mentioned in the Collaborators section of a CRC card will almost always refer to a class that is significant part of the design itself and so almost always a class that we are designing ourselves. However, at the coding stage, nothing inherently distinguishes a String object that is part of an object's state and an object of a custom class that is part of the object's state. A String object might be taken for granted as an implementation detail when the Responsibilities of a class include knowing a piece of information (or tracking an attribute) whose content is likely to be text.
 
 "For instance, `bob` has a collaborator object stored in the `@pet` instance variable. When we need that `Bulldog` object to **perform some action** (i.e. we want to access some **behavior** of `@pet`), then we can go through `bob` and call the method on the object stored in `@pet`, such as `speak` or `fetch`."
 
 So collaboration seems partly about access to behaviors, rather than just the types of data stored in the object. A CRC card has Class Responsibilities and Collaborators. Collaborators help the Class carry out its responsibilities.
 
 "When we work with collaborator objects, they are usually custom objects (e.g. defined by the programmer and not inherited from the Ruby core library); `@pet` is an example of a custom object. Yet, collaborator objects aren't strictly custom objects. Even the string object sored in `@name` within `bob` in the code above is technically a collaborator object"
+
+from Forum post:
+
+"objects which collaborate are those which send messages to each other"
+
+This suggests that even a custom class object passed in to the method of another custom class's object is a collaborator. Essentially it seems to me that we are modeling *likely* associations between objects of class *at the design stage*. 
+
+### Wendy Kuhn article ###
+
+""*We name as collaborators objects which will send or be sent messages in the course of satisfying responsibilities*" ([Beck & Cunningham](http://c2.com/doc/oopsla89/paper.html))*.*
+
+This suggests that a collaborator is an object of another class whose design (particularly the interface) directly impacts the design of another class. This would include dependencies as well as associations.
+
+In contradistinction to inheritance, which is an *is-a* relationship, "**association** can be thought of as a *has-a* relationship. For example, a library has books, so there is an associative relationship between objects of class Library and objects of class Book."
+
+"**Take away:** A collaborator object is part  of another object’s state and can be an object of any class. The type of object depends on the context of your program."
+
+* a collaborator object is part of another object's state
+* the relationship between the object and its collaborator object is a *has-a* relationship
+* technically a collaborator can be any object that becomes part of another object's state at any point
+* however from the design perspective of a CRC card, custom classes (and their objects) are the significant forms of collaboration since they are the classes we have complete control over as part of the overall design
+* a collaborative relationship begins at an early point of the design phase and at that point is still a question of intention
+
+One thing worth bearing in mind here, is that so far we are discussing *collaborator objects* not the *collaborator classes* which the CRC card design phase is concerned with. So at this level, where lots of examples are given of concrete Ruby code, collaboration is a very vague notion perhaps meant to prepare you to move from OOP Ruby syntax to thinking about language-agnostic OOP design. So if asked about collaborator objects it would seem best to essentially give an answer that corresponds to *association* relationships, since that is what the WK article suggests and it has been included as part of the LS material.
+
+Another way to think about this, is that when you are designing classes and modeling their relationships to each other, the strongest coupling between classes will be between a class whose object's will retain references to another (collaborator) class's objects as part of their state.
+
+"Take away: collaboration doesn't just occur when code is executed and objects are occupying space in memory, but it exists from the design phase of your program"
+
+"With regard to actual objects in memory, *collaboration* occurs when one object is added to the state of another object (i.e., when a method is invoked on an object). However, a more helpful mental model is: *the collaborative relationship exists in the design (or intention) of our code"
+
+The collaborative relationship is "meaningful in terms of the design of our program" rather than the implementation detail of an intermediate collection object like an instance of Array being used to store the references to collaborator objects, for instance.
+
+## 2:10: Lecture: Modules ##
+
+"One of the limitations of class inheritance in Ruby is... **single inheritance**"
+
+* In Ruby, a class can only inherit from one superclass: this is single inheritance
+
+"In some situations, this limitation makes it very difficult to accurately model the problem  domain."
+
+"Some programming languages allow classes to directly inherit from multiple classes, a functionality know as multiple inheritance. Ruby's answer to multiple inheritance is by way of *mixing in* behaviors. A class can only sub-class from one parent, but it can mix in as many modules as it likes."
+
+## 2:18: Coding Tips
+
+* **Explore the problem before design.** - "Take time to explore the problem domain with a **spike** - exploratory code to play around with the problem. Spikes can help validate initial hunches and hypotheses. You don't have to worry about code quality, because the idea of a spike is to throw away the code."
+
+## 2:19: CRC Cards ##
+
+"Class Responsibility Collaborator (CRC) cards are a way to **model the various classes of a program.** While it started out as a teaching tool, it's become a real-world tool to **flesh out and design classes** and **map interactions between classes**."
+
+CRC model - the collection of cards (perhaps arranged with spatial significance)
+
+"One thing to note is that we didn't list all the methods in the `RPSGame` class. We only want to list the *public* methods that can or should be called from **outside** the class."
+
+**Class** - the name of the class, super-class, sub-classes (and mixins ?)
+
+**Responsibilities** - public interface, so public methods including (public) attributes
+
+**Collaborators** - associated classes, whereby objects of the collaborator class are in an association relationship to an instance of our class. Generally, this refers to *significant* collaborators, usually classes that we are designing ourselves, rather than built-in classes like String, which can be considered implementation details
+
+1. Write a description of the problem and extract major nouns and verbs
+2. Make an initial guess at organizing the verbs and nouns into methods and classes/modules, then do a spike to explore the problem with temporary code
+3. When you have a better idea of the problem, model your thoughts into CRC cards
+
+
+
+
 
