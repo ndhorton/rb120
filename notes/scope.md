@@ -48,3 +48,33 @@ On line 7, the string `"Sparky"` is passed into the `GoodDog::new` method and th
 
 * an object's state is composed of instance variables and the objects they reference
 
+**<u>3:3 Variable Scope</u>**
+
+"Instance variables are variables that start with `@` and are scoped at the object level. They are used to track individual object state, and do not cross over between objects"
+
+* Instance variables are scoped at the object level
+* Instance variables are used to track the individual object's state and are not shared between objects of a class
+* Instance variables separate the state of an object from other objects
+
+"Because the scope of instance variables is at the object level, this means that the instance variable is accessible in an object's instance methods, even if it's initialized outside of that instance method"
+
+* all the instance methods of an object have access to all of that object's instance variables, regardless of which instance method they were initialized in
+
+"Unlike local variables, instance variables are accessible within an instance method even if they are not initialized or passed in to the method. Remember, their scope is at the *object level*"
+
+* Instance variables permit an object to have its own distinct state
+
+"another distinction from local variables. If you try to reference an uninitialized local variable, you'd get a `NameError`. But if you try to reference an uninitialized instance variable, you get `nil`"
+
+"Instance variables initialized at the class level are an entirely different thing called *class instance variables*. You shouldn't worry about that yet, but just remember to initialize instance variables within instance methods"
+
+* Instance variables are initialized and referenced within instance methods
+
+**<u>3:4 Inheritance and Variable Scope</u>**
+
+"Instance variables and their values are not inherited"
+
+* Instance variables are not directly inherited; rather, instance methods that initialize instance variables are inherited (with respect to both class inheritance and mixin modules)
+
+## Class Variables ##
+
