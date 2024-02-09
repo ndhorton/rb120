@@ -310,23 +310,415 @@ So essentially, modules do not inherit so there are no superclasses to search, b
 
 ## 3:4: Inheritance and Variable Scope ##
 
+### Instance variables ###
+
+"Instance variables don't really exhibit any surprising behavior. [in relation to inheritance] They behave very similar to how instance methods would, with the exception that we must first call the method that initializes the instance variable. This distinction suggest that, unlike instance methods, **instance variables and their values are not inherited**."
+
+* instance variables are not directly inherited; however methods that initialize instance variables are inherited
+
+### Class variables ###
+
+```ruby
+class Animal
+  @@total_animals = 0
+  
+  def initialize
+    @@total_animals += 1
+  end
+end
+
+class Dog < Animal
+  def total_animals
+    @@total_animals
+  end
+end
+
+spike = Dog.new
+spike.total_animals # => 1
+```
 
 
 
+"class variables are accessible to sub-classes. Note that since this class variable [is initialized in the class but outside of any method definition]  there is no method to explicitly invoke to initialize it. The class variable is loaded when the class is evaluated by Ruby. This is pretty expected behavior."
+
+"But there is a potentially huge problem. It can be dangerous when working with class variables within the context of inheritance, because **there is only one copy of the class variable across all sub-classes**"
+
+```ruby
+class Vehicle
+  @@wheels = 4
+  
+  def self.wheels
+    @@wheels
+  end
+end
+
+class Motorcycle < Vehicle
+  @@wheels = 2
+end
+
+class Car < Vehicle
+end
+
+Motorcycle.wheels # 2
+Vehicle.wheels # 2
+Car.wheels # 2 (even though Car inherits from Vehicle, not Motorcycle)
+```
+
+"The fact that an entirely different sub-class of `Vehicle` can somehow modify this class variable throws a wrench into the way we think about class inheritance"
+
+"For this reason, avoid using class variables when working with inheritance. In fact, some Rubyists would go as far as recommending avoiding class variables altogether. The solution is usually to use *class instance variables*, but that's a topic we aren't ready to talk about yet."
+
+* class variables are not so much inherited as actually shared between a class and all of its descendant classes. A class variable set in any of the classes in this tree of shared class variables will be able to reassign the class variable for all other related classes
+* avoid using class variables when inheritance is involved; perhaps avoid class variables altogether
+* class variables track state that is shared between a class and all of its descendant classes and all instances of all those classes
+
+### Constants ###
+
+"As described in the previous assignment, Ruby first attempts to resolve a constant by searching in the lexical scope of that reference. If this is unsuccessful, Ruby will then traverse up the inheritance hierarchy *of the structure that references the constant*"
+
+```ruby
+module FourWheeler
+  WHEELS = 4
+end
+
+class Vehicle
+  def maintenance
+    "Changing #{WHEELS} tires."
+  end
+end
+
+class Car < Vehicle
+  include FourWheeler
+  
+  def wheels
+    WHEELS
+  end
+end
+
+car = Car.new
+puts car.wheels      # 4
+puts car.maintenance # NameError: uninitialized constant Vehicle::WHEELS
+```
+
+"When resolving the `WHEELS` constant reference on line 5, Ruby first searches lexically. Since it cannot be found, Ruby then searches the ancestors of the `Car` class (since that's the structure that refers to the constant). Since a `WHEELS` constant exists within the `FourWheeler` module, that is what is output on line 20"
+
+"Next, when resolving the `WHEELS` constant reference on line 7, Ruby first searches the lexical scope of the reference. Since it cannot be found, Ruby then tries the inheritance hierarchy of the `Vehicle` class that encloses the reference. (Note that this is *not* the `Car` class, despite the fact that it is an instance of the `Car` class that is calling the method). Ruby searches the ancestors of `Vehicle`: `Object`, `Kernel`, `BasicObject`. Since none of these classes contain the `WHEELS` constant, an error is raised"
+
+"So far, we've described the order of constant resolution as lexical scope of the reference first, and then the inheritance hierarchy of the [lexically] enclosing class/module. There's one caveat to this: the lexical scope doesn't include the main scope (i.e. top level)"
+
+```ruby
+class Vehicle
+  WHEELS = 4
+end
+
+WHEELS = 6
+
+class Car < Vehicle
+  def wheels
+    WHEELS
+  end
+end
+
+car = Car.new
+puts car.wheels
+```
+
+"Ruby attempts to resolve the `WHEELS` constant on line 9 by searching the lexical scope up to (but not including) the main scope. Ruby then searches by inheritance where it finds the `WHEELS` constant in the `Vehicle` class, which is why `4` is output on line 14. The top level scope is only searched *after* Ruby tries the inheritance hierarchy."
+
+"So,  the full constant lookup path is first the lexical scope of the reference, the the inheritance chain of the enclosing [lexical] structure [surrounding the reference], and finally the top level. This can get quite tricky with complex code"
 
 
 
+* **Instance Variables** behave the way we'd expect. The only thing to watch out for is to make sure the instance variable is initialized before referencing it
+* **Class Variables** have a very insidious behavior of allowing sub-classes to override super-class class variables. Further, the change will affect all other sub-classes of the super-class. This is extremely unintuitive behavior, forcing some Rubyists to eschew using class variables altogether.
+* **Constants** have *lexical scope*, meaning the position of the code determines where it is available. Ruby attempts to resolve a constant by searching lexically of the reference, then by inheritance of the enclosing class/module, and finally the top level
+
+Aside: One thing to note is that modules do not inherit, so if a module is the lexically-enclosing structure surrounding a constant reference then Ruby goes straight to top level/Object if the constant cannot be found during the lexical search
+
+## 3:5: Fake Operators ##
+
+real operators
+
+```ruby
+. :: # method and constant resolution
+&&   # logical AND and OR
+||
+.. ... # Range notation
+?:     # ternary operator(s)
+# Assignment
+# the operator-methods and setters called by the shortcuts can be custom
+= += -= %= /= |= &= >>= <<= *= &&= ||= **=
+{ } # one-liner block delimiters
+```
+
+Most commonly overridden
+
+`==` - automatically provides `!=` when defined
+
+`!=` - can be defined separately, or you could override the default provided when `==` is defined. Don't do this though
+
+`< <= > >=` - all common to be defined
+
+`<<` - define for custom collection objects (mimic Array#<<)
+
+`+` - should either be 1) adding/incrementing or 2) concatenating, depending on the kind of object, and should return an object of the caller's class, not e.g. the arrays being concatenated or integer values being added
+
+`[] []=` - Element getter and element setter, the syntactic sugar we are used to `arr[2]` is actually `arr.[](2)`, and `arr[2] = 'fish'` is actually `arr.[]=(2, 'fish')`. So we `def []=(index, object)`. Used for classes that represent a collection
+
+An element getter is an element reference method, an element setter an element assignment method
+
+If we define our own operators, "we must be careful to follow conventions established in the Ruby standard library. Otherwise, using these methods will be very confusing"
 
 
 
+## 3:6 Exceptions ##
+
+**What is an exception? ** - "An exception is simply an *exceptional state* in your code. It is not necessarily a bad thing, but it is Ruby's way of letting you know that your code is behaving unexpectedly. If an exception is raised and your code does not handle the exception, your program will crash and Ruby will provide a message telling you what type of error was encountered."
+
+"Ruby provides a hierarchy of built-in classes to simplify exception handling. In fact, the exception names that you see when your program crashes, such as `TypeError`, are actually class names. The class at the very top of the hierarchy is the `Exception` class. `Exception` has several subclasses, many of which have descendants of their own"
+
+To simplify
+
+```ruby
+Exception
+  NoMemoryError
+  ScriptError
+    LoadError
+    NotImplementedError
+    SyntaxError
+  SecurityError
+  SignalException
+    Interrupt
+  StandardError
+    # ...
+  SystemExit
+  SystemStackError
+  fatal
+```
+
+The `StandardError` class is the superclass of pretty much every exception you actually want to handle, and custom exception classes should subclass `StandardError`, not `Exception`
+
+```ruby
+Exception
+  StandardError
+		ArgumentError
+			UncaughtThrowError
+		EncodingError
+		FiberError
+		IOError
+			EOFError
+		IndexError
+			KeyError
+			StopIteration
+		LocalJumpError
+		NameError
+			NoMethodError
+		RangeError
+			FloatDomainError
+		RegexpError
+		RuntimeError # `raise [message]` without specific class will raise this
+    SystemCallError
+			Errno::*
+		ThreadError
+		TypeError
+		ZeroDivisionError
+```
+
+Pressing `ctrl-c` during program operation "actually raises an exception via the `Interrupt` class"
+
+Handling *all* exceptions can be very dangerous: "there are some errors that we *should* allow to crash our program. Important errors such as `NoMemoryError`, `SyntaxError`, and `LoadError` must be addressed in order for our program to operate appropriately. Handling all exceptions may result in masking critical errors and can make debugging a very difficult task."
+
+"The action you choose to take when handling an exception will be dependent on the circumstances; examples include logging the error, sending an e-mail to an administrator, or displaying a message to the user"
+
+`begin/rescue` block
+
+```ruby
+begin
+  # put code at risk of failing here
+rescue
+  # take action
+end
+```
+
+In method definitions, you can usually dispense will `begin` if you think the entire method definition code might cause exceptional behavior
+
+```ruby
+def undefined_division
+  1 / 0
+rescue ZeroDivisionError => e
+  puts e.message
+end
+```
+
+However you can still use a `begin` to be more specific about the area of potentially exceptional code
+
+```ruby
+def undefined_division
+  puts "I sure hope this simple division operation goes well"
+  begin
+    1 / 0
+  rescue ZeroDivisionError => e
+    puts "Nooooo, #{e.message}"
+  end
+end
+```
+
+"If no exception type is specified [after `rescue`], all `StandardError` exceptions will be rescued and handled"
+
+"Remember *not* to tell Ruby to rescue `Exception` class exceptions. Doing so will rescue *all* exceptions down the `Exception` class hierarchy and is very dangerous"
+
+"It is possible to include multiple `rescue` clauses to handle different types of exceptions that may occur."
+
+```ruby
+begin
+  # some code at risk of failing
+rescue TypeError
+  # take action
+rescue ArgumentError
+  # take a different action
+end
+```
+
+"Alternatively, if you would like to take the same action for more than one type of exception, you can use the syntax on line 3 below"
+
+```ruby
+begin
+  # some code at risk of failing
+rescue ZeroDivisionError, TypeError
+  # take action
+end
+```
+
+**Exception Objects and built-in methods**
+
+"Exception objects are just normal Ruby objects that we can gain useful information from. Ruby provides built-in behaviors for these objects that you may want to use while handling the exception or debugging."
+
+The documentation for the built-in methods that exception objects share is available under the entry for the `Exception` class.
+
+`rescue TypeError => e`
+
+The above syntax rescues any `TypeError` and initializes `e` to the exception object. `e` is simply a conventional name for the local variable.
+
+`Exception#message` - returns String message
+
+`Exception#backtrace` - returns the stack trace associated with the exception
+
+```ruby
+begin
+  # code at risk of failing here
+rescue StandardError => e # storing the exception object in e
+  puts e.message          # output error message
+end
+```
+
+`ensure` - "you may also choose to include an `ensure` clause in your `begin/rescue` block after the last `rescue` clause. This branch will always execute, whether an exception was raised or not."
+
+"When is this useful? A simple example is resource management; the code below demonstrates working with a file. Whether or not an exception was raised when working with the file, this code ensures that it will always be closed."
+
+```ruby
+file = open(file_name, 'w')
+
+begin
+  # do something with file
+rescue
+  # handle exception
+rescue
+  # handle a different exception
+ensure
+  file.close # executes every time
+end
+```
+
+"If there are multiple `rescue` clauses in the `begin/rescue` block, the `ensure` clause serves as a single exit point for the block and allows you to put all of your cleanup code in one place, as seen in the code above"
+
+"One important thing to remember about `ensure` is that it is critical that this code does not raise an exception itself. If the code within the `ensure` clause raises an exception, any exception raised earlier in the execution of the `begin/rescue` block will be masked and debugging can become very difficult"
+
+`retry`
+
+"it is unlikely that you will use [`retry`] very often"
+
+"using `retry` in your `begin/rescue` block redirects your  program back to the `begin` statement. This allows your program to make another attempt to execute the code that raise an exception. You may find `retry` useful when connecting to a remote server, for example."
+
+However, "beware that if your code continually fails, you risk ending up in an infinite loop. In order to avoid this, it's a good idea to set a limit on the number of times you want `retry` to execute."
+
+"`retry` must be called within the `rescue` block, using `retry` elsewhere will be a `SyntaxError`"
+
+```ruby
+RETRY_LIMIT = 5
+
+begin
+  attempts = attempts || 0
+  # do something
+rescue
+  attempts += 1
+  retry if attempts < RETRY_LIMIT
+end
+```
+
+"So far, [we have] discussed how to handle exceptions raise by Ruby. In the previous code examples, we have had no control over when to raise an exception or which error type to use; it has all been decided for us."
+
+"*Handling* an exception is a reaction to an exception that has already been *raised*."
+
+"Ruby actually gives you the power to manually raise exceptions yourself by calling `Kernel#raise`. This allows you to choose what type of exception to raise and even set your own error message. If you do not specify what type of exception to raise, Ruby will default to `RuntimeError` (a subclass of `StandardError`)."
+
+"There are a few different syntax options you may use when working with `raise`, as seen below"
+
+```ruby
+raise TypeError.new("Something went wrong!")
+raise TypeError, "Something went wrong!"
+```
+
+"In the following example, the exception type will default to a `RuntimeError`, because no other is specified"
+
+```ruby
+def validate_age(age)
+  raise("invalid age") unless (0..105).include?(age)
+end
+
+begin
+  validate_age(age)
+rescue RuntimeError => e
+  puts e.message
+end
+```
+
+It is important to understand that exceptions you raise manually in your program can be handled in the same manner as exceptions Ruby raises automatically.
+
+"Ruby allows us the flexibility to create our own custom exception classes"
+
+```ruby
+class ValidateAgeError < StandardError; end
+```
+
+"Notice that our custom exception class `ValidateAgeError` is a subclass of an existing exception. This means that `ValidateAgeError` has access to all of the built-in exception object behaviors Ruby provides, including `Exception#message` and `Exception#backtrace`"
+
+"You should always avoid masking exceptions from the `Exception` class itself and other system-level exception classes. Concealing these exceptions is dangerous and will suppress very serious problems in your program -- *don't do it*"
+
+"Most often you will want to inherit from `StandardError`"
+
+"When using a custom exception class, you can be specific about the error your program encountered by giving the class a very descriptive name. Doing so may aid in debugging"
+
+```ruby
+class ValidateAgeError < StandardError; end
+
+def validate_age(age)
+  raise ValidateAgeError, "invalid age" unless (0..105).include?(age)
+end
+
+age = 52
+
+begin
+  validate_age(age)
+rescue ValidateAgeError => e
+  puts e.message
+end
+```
 
 
 
+"You can raise and handle custom exceptions just like any built-in exception that Ruby provides"
 
-
-
-
-
+It seems to me from trying it out that your custom exception class *must* inherit from an existing exception class in order to be raised properly (not just so it gets the built-in `Exception methods)
 
 
 
