@@ -1,14 +1,25 @@
-module Inflatable
-  WHEELS = 4
-end
+GREETINGS = ["Hi, I am Shakespeare"]
 
-class Car
-  include Inflatable
+module ElizabethanEra
+  GREETINGS = ['How doest thou', 'Bless thee', 'Good morrow']
 
-  def inflate
-    puts "You've inflated the tires on all #{WHEELS} wheels."
+  class Person
+    def self.greetings
+      GREETINGS.join(', ')
+    end
+
+    def greet
+      GREETINGS.sample
+    end
   end
 end
 
-c = Car.new
-c.inflate
+class ElizabethanEra::Playwright
+  def self.greet
+    GREETINGS.sample
+  end
+end
+
+puts ElizabethanEra::Person.greetings
+puts ElizabethanEra::Person.new.greet
+puts ElizabethanEra::Playwright.greet
