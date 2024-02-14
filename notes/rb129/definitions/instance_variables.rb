@@ -105,3 +105,27 @@ joe = Person.new
 puts joe.name.inspect
 joe.name = "Joe"
 puts joe.name.inspect
+
+# instance variables
+
+class HotelCustomer
+  attr_reader :name, :room_number
+
+  def initialize(name, room_number)
+    @name = name
+    @room_number = room_number
+  end
+
+  def change_room(new_room_number)
+    @room_number = new_room_number
+  end
+
+  def display_details
+    puts "#{@name} is staying in room #{@room_number}."
+  end
+end
+
+customer = HotelCustomer.new("Fred Williams", 13)
+customer.display_details
+customer.change_room(15)
+customer.display_details
