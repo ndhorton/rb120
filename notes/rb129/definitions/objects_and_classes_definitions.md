@@ -41,6 +41,7 @@
 **Implementation**
 
 * Objects are commonly instantiated by calling the `new` method on the appropriate class (and, for some core classes, through literal notation)
+* The initial state of an object is defined by the `initialize` private instance method and any arguments passed to `new`
 * Client code can call a method on an object using the dot operator `.`
 * Attributes can be thought of as the various characteristics that an object is made of
 * An object's state tracks the attributes defined in its class, and an object's instance variables keep track of its state
@@ -50,3 +51,53 @@
 * Objects facilitate  encapsulation, serving as containers for data that can be manipulated and changed through a public interface without affecting the entire program
 * Objects allow a program to become the interaction of and communication between many small parts
 * Objects thus allow us to model entities ('nouns') from the problem domain. An object's public interface can describe its available actions in terms of the behavior of entities in the problem domain. This facilitates greater levels of abstraction, allowing us to create more complex programs that are easier to maintain and scale
+
+
+
+**Examples: Classes**
+
+```ruby
+# classes define objects
+class Truck; end
+toyota = Truck.new
+```
+
+```ruby
+# classes define attributes and behavior for objects
+class Customer
+  # attributes, defined with and without accessor methods
+  # customer name and orders with, bank card without
+  attr_accessor :name, :orders
+
+  def initialize(name, bank_card)
+    @name = name                  # instance variables track attributes
+    @orders = []                  # for individual objects of the class
+    @bank_details = bank_details
+  end
+
+  # behavior that customer objects have
+  def place_order
+    puts "#{name} is placing an order..."
+  end
+end
+
+customer = Customer.new("John Reilly", "2342-9833-2324-2335")
+customer.place_order
+```
+
+
+
+**Examples: Objects**
+
+```ruby
+# initializing a new object with ::new -> #initialize
+class Truck
+  def initialize(make)
+    puts "Creating a new #{self.class} object!"
+    @make = make
+  end
+end
+
+toyota = Truck.new("Toyota")
+```
+
