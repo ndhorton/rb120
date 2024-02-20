@@ -1,22 +1,23 @@
-class NamedRegexp
-  attr_reader :expression, :name
-  
-  def initialize(expression, name)
-    @expression = expression
-    @name = name
+class A
+  def initialize
+    self.class.value += 1
   end
 
-  def ===(str)
-    expression === str
+  class << self
+    def value
+      @value ||= 0
+    end
+
+    def value=(value)
+      @value = value
+    end
   end
 end
 
-rgx = NamedRegexp.new(/f.*/, 'bob')
+class B < A; end
 
-case 'fish'
-when /b.*/ then puts "starts with a b"
-when /c.*/ then puts "starts with a c"
-when rgx   then puts "starts with a #{rgx.name}"
-else
-  puts "It's all gone wrong"
-end
+10.times { A.new }
+16.times { B.new }
+
+puts A.value
+puts B.value
