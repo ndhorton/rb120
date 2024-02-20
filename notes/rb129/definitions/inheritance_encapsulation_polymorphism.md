@@ -379,6 +379,181 @@ snacks.each { |snack| puts snack.coating }
 
 
 
+**from Polymorphism forum post: lesson 1**
+
+OP:
+
+"In programs, one bit of data often needs to interact with another bit of data. The code that handles this interaction can easily become fragile by relying on specific details about the types of data... This can make it hard down the line to change one of the data types"
+
+"In object oriented programming, interaction generally means one object sending message to another object. To avoid becoming fragile, we can make use of polymorphism: the code that handles the interaction can remain agnostic about the types of objects interacting (or how they are implemented). Instead, it can rely entirely on the objects' public interfaces to pass message back and forth. This means that if we later decide to change the implementation of an object, or use an entirely different type of object, the code that handles the interaction can still function, so long as the objects it works with provide the expected interface. "
+
+* Polymorphism makes programs less fragile and more flexible by loosening the coupling between a piece of code and the specific details of the type of data it expects to be operating on
+* In Ruby, as long as an object exposes the right public methods and behaves appropriately in response to those methods being invoked, the client code does not need to concern itself with he type of the object. This agnosticism towards the type of an object passed to a piece of client code is known as duck typing. If an object walks like a duck and quacks like a duck, it can be treated as a duck.
+* While polymorphic behavior can be achieved in Ruby through class inheritance, and through the inclusion of mixin modules, duck typing means that objects that do not share any significant ancestors can still be treated polymorphically if they expose the appropriately named method (and as long as the return value or side effects of that method fit the purposes of the client code).
+
+TA:
+
+```ruby
+class Animal
+  def eat
+    # generic eat method
+  end
+end
+
+class Fish < Animal
+  def eat
+    # eating specific to fish
+  end
+end
+
+class Cat < Animal
+  def eat
+    # eat implementation for cat
+  end
+end
+
+def feed_animal(animal)
+  animal.eat
+end
+
+array_of_animals = [Animal.new, Fish.new, Cat.new]
+array_of_animals.each do |animal|
+  feed_animal(animal)
+end
+```
+
+"Looking at the above example, we can see that Polymorphism is basically designing your data types in such a way that you can treat a bunch of types as if they were a single type. Every object in the array is a different type of animal but the client code can treat them all as a generic animal... So as you said, the public interface allows us to work with all of these types in the same way even though the implementation can be dramatically different."
+
+"Polymorphism becomes even more important in statically typed languages because you have to declare the type of each parameter, variable, and return value. Declaring the `animal` parameter of `feed_animal` as being of type `Animal` makes sure that the method is able to handle any sub-type of `Animal`"
+
+* Polymorphism is made possible by designing data types so that a selection of different types can be treated as though they were the same type
+
+**Back to 2:6**
+
+"**Duck typing** occurs when objects of different *unrelated* types both respond to the same method name. With duck typing, we aren't concerned with the class or type of an object, but we do care whether an object has a particular behavior. *If an object quacks like a duck, then we can treat is like a duck.* Specifically, duck typing is a form of polymorphism. As long as the objects involved use the same method name and take the same number of arguments, we can treat the object as belonging to a specific category of objects."
+
+* Duck typing occurs when objects of unrelated types respond to the same message (a method name to be called with a specific number of arguments)
+
+* Duck typing is not concerned with the class or type of an object, but only if it behaves appropriately for the task at hand
+* If an object quacks like a duck, we can treat it like a duck
+* Duck typing is a form of polymorphism. So long as the objects respond to the same method name given with the same number of arguments, they belong to the appropriate category of object.
+* The only type check is that the object must have the behavior necessary for the task at hand, it needs only have a public method of the appropriate name which performs an action compatible with the purposes of the client code.
+
+"In the next example, we define a `Wedding` class and several preparer classes. The example attempts to implement polymorphic behavior without using duck typing; it shows you how you shouldn't do it!"
+
+```ruby
+class Wedding
+  attr_reader :guests, :flowers, :songs
+  
+  def prepare(preparers)
+    preparers.each do |preparer|
+      case preparer
+      when Chef
+        preparer.prepare_food(guests)
+      when Decorator
+        preparer.decorate_place(flowers)
+      when Musician
+        preparer.prepare_performance(songs)
+      end
+    end
+  end
+end  
+
+class Chef
+  def prepare_food(guests)
+      # implementation
+  end
+end
+
+class Decorator
+    def decorate_place(flowers)
+      # implementation
+    end
+  end
+end
+
+class Musician
+    def prepare_performance(songs)
+      # implementation
+    end
+  end
+end
+```
+
+"The problem with this approach is that the `prepare` method has too many dependencies. It relies on specific classes and their names. It also needs to know which method it should call on each of the objects, as well as the argument that those methods require. If you change anything within those classes that impacts `Wedding#prepare`, you need to refactor the method. for instance, if we need to add another wedding preparer, we must add another `case` statement [`when` clause]. Before long, the method will become long and messy."
+
+"Let's refactor this code to implement polymorphism with duck typing"
+
+```ruby
+class Wedding
+  attr_reader :guests, :flowers, :songs
+  
+  def prepare(preparers)
+    preparers.each do |preparer|
+      preparer.prepare_wedding(self)
+    end
+  end
+end
+
+class Chef
+  def prepare_wedding(wedding)
+    prepare_food(wedding.guests)
+  end
+  
+  def prepare_food(guests)
+    # implementation
+  end
+end
+
+class Decorator
+  def prepare_wedding(wedding)
+    decorate_place(wedding.flowers)
+  end
+  
+  def decorate_place(flowers)
+    # implementation
+  end
+end
+
+class Musician
+  def prepare_wedding(wedding)
+    prepare_performance(wedding.songs)
+  end
+  
+  def prepare_performance(songs)
+    # implementation
+  end
+end
+```
+
+"Though there is no inheritance in this example, each of the preparer-type classes provides a `prepare_wedding` method. We still have polymorphism since all of the objects respond to the `prepare_wedding` method call. If we later need to add another preparer type, we can create another class and implement the `prepare_wedding` method to perform the appropriate actions."
+
+"Note that merely having two different objects that have a method with the same name and compatible arguments doesn't mean that you have polymorphism. In theory, those methods might be used polymorphically, but that doesn't always make sense. Consider the following two classes:"
+
+```ruby
+class Circle
+  def draw; end
+end
+
+class Blinds
+  def draw; end
+end
+```
+
+"These classes each have a method name `draw`, and the methods take no arguments. In the `Circle` class, `draw` may cause the window blinds in an office building to be drawn (as in close or opend). In theory, you could write some code that uses these methods polymorphically:"
+
+```ruby
+[Circle.new, Blinds.new].each { |obj| obj.draw }
+```
+
+"However, it's unlikely that this would ever make sense in real code. Unless you're actually calling the method in a polymorphic manner, you don't have polymorphism. In practice, polymorphic methods are intentionally designed to be polymorphic; if there's no intention, you probably shouldn't use them polymorphically."
+
+
+
+
+
+
+
 
 
 
