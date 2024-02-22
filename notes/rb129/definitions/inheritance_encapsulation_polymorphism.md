@@ -432,12 +432,17 @@ end
 
 "**Duck typing** occurs when objects of different *unrelated* types both respond to the same method name. With duck typing, we aren't concerned with the class or type of an object, but we do care whether an object has a particular behavior. *If an object quacks like a duck, then we can treat is like a duck.* Specifically, duck typing is a form of polymorphism. As long as the objects involved use the same method name and take the same number of arguments, we can treat the object as belonging to a specific category of objects."
 
-* Duck typing occurs when objects of unrelated types respond to the same message (a method name to be called with a specific number of arguments)
+Duck typing occurs when objects of unrelated types respond to the same message (a method name to be called with a specific number of arguments)
 
-* Duck typing is not concerned with the class or type of an object, but only if it behaves appropriately for the task at hand
-* If an object quacks like a duck, we can treat it like a duck
-* Duck typing is a form of polymorphism. So long as the objects respond to the same method name given with the same number of arguments, they belong to the appropriate category of object.
-* The only type check is that the object must have the behavior necessary for the task at hand, it needs only have a public method of the appropriate name which performs an action compatible with the purposes of the client code.
+Duck typing is not concerned with the class or type of an object, but only if it behaves appropriately for the task at hand
+
+If an object quacks like a duck, we can treat it like a duck
+
+Duck typing is a form of polymorphism. So long as the objects respond to the same method name given with the same number of arguments, they belong to the appropriate category of object.
+
+
+
+The only type check is that the object must have the behavior necessary for the task at hand, it needs only have a public method of the appropriate name which performs an action compatible with the purposes of the client code.
 
 "In the next example, we define a `Wedding` class and several preparer classes. The example attempts to implement polymorphic behavior without using duck typing; it shows you how you shouldn't do it!"
 
@@ -481,6 +486,10 @@ end
 ```
 
 "The problem with this approach is that the `prepare` method has too many dependencies. It relies on specific classes and their names. It also needs to know which method it should call on each of the objects, as well as the argument that those methods require. If you change anything within those classes that impacts `Wedding#prepare`, you need to refactor the method. for instance, if we need to add another wedding preparer, we must add another `case` statement [`when` clause]. Before long, the method will become long and messy."
+
+* Duck typing can reduce dependencies in a piece of code. Client code does not need to have knowledge of the type of the object it is operating on or of the implementation details of the type. This can reduce code fragility and makes it easier to introduce new types of objects into an existing program without changing every method it might be passed to.
+
+
 
 "Let's refactor this code to implement polymorphism with duck typing"
 
@@ -548,17 +557,63 @@ end
 
 "However, it's unlikely that this would ever make sense in real code. Unless you're actually calling the method in a polymorphic manner, you don't have polymorphism. In practice, polymorphic methods are intentionally designed to be polymorphic; if there's no intention, you probably shouldn't use them polymorphically."
 
+So duck typing refers to the client code itself. It means that objects can be passed to the code (as arguments, return values, etc) and the code can successfully call methods on them without needing to check the type of the objects it has acquired. The objects do not need to be of related types, nor do they need to formally implement any formally-specified interface, rather they simply need to respond to a common message (a method invocation with a certain number of arguments). This is polymorphism through duck typing.
+
+Inheritance is certainly one way an object might acquire the same method call as an object of a different type (its superclass, say), but equally it could be through designing several unrelated classes to have a method definition of a certain name. 
+
+* Duck typing is a form of polymorphism in which objects of unrelated types can be used polymorphically.
+* Duck typing is not concerned with the class or type of an object, but only if it behaves appropriately for the task at hand
+* If an object quacks like a duck, we can treat it like a duck
+* Duck typing can be seen to occur when objects of unrelated classes respond to the same method name
+* Duck typing is a form of polymorphism. So long as the objects respond to the same method name given with the same number of arguments, they belong to the appropriate category of object.
+* With duck typing, there is no check as to what type of object the client code is dealing with; rather, the object must only have the behavior necessary for the task at hand.  The object needs only have a public method of the appropriate name that performs an action compatible with the purposes of the client code in order to be the right category of object. This is polymorphism through duck typing.
+
+* Duck typing can reduce dependencies in a piece of code. Client code does not need to have knowledge of the type of the object it is operating on or of the implementation details of the type. This can reduce code fragility and makes it easier to introduce new types of objects into an existing program without changing every method it might be passed to.
 
 
 
+So you could say class inheritance and mixin modules are ways that different types of object can acquire common behaviors and respond to a common interface. But from the point of view of polymorphic client code, duck typing means that different types of object do not need to be related at all for the objects to be used polymorphically; all that is necessary is that they respond appropriately to the particular method names necessary for the task at hand.
 
+**Encapsulation again**
 
+"Encapsulation lets us hide the internal representation of an object from the outside and only expose the methods and properties that users of the object need. We can use *method access control* to expose these properties and methods through the public (or external) interface of a class: its public methods."
 
+* Encapsulation lets us hid the internal representation of an object from client code and only expose the methods and properties that users of the object need.
+* Method access control hides implementation details and only exposes attributes and methods through a public interface: the public methods of a class
 
+```ruby
+class Dog
+  attr_reader :nickname
+  
+  def initialize(n)
+    @nickname = n
+  end
+  
+  def change_nickname(n)
+    self.nickname = n
+  end
+  
+  def greeting
+    "#{nickname.captialize} says Woof Woof!"
+  end
+  
+  private
+  
+  attr_writer :nickname
+end
 
+dog = Dog.new("rex")
+dog.change_nickname("barny") # change nickname to "barny"
+puts dog.greeting # Displays: Barny says Woof Woof!
+```
 
+"In this example, we can change the nickname of a dog by calling the `change_nickname` method <u>without needing to know how the `Dog` class and this method are implemented</u>"
 
+"The same thing happens when we call the method `greeting` on a `Dog` object. The output is `Barny says Woof Woof!`, with the dog's nickname capitalized. <u>Again, we don't need to know how the method is implemented. The main point is that we expect a greeting message from the dog and that's what we get.</u>"
 
+"<u>Note that the setter method for `nickname` is private: it is not available outside of the class</u> and `dog.nickname = "barny"` would raise an error"
+
+"The class should have as few public methods as possible. It lets us simplify using that class and protects data from undesired changes from the outer world"
 
 
 
