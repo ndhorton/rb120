@@ -1,0 +1,11 @@
+{
+  prompt_name: {
+    message: "Please enter your name: ",
+    error_message: "Sorry, name must contain at least one character",
+  },
+  prompt_color: {
+    message: "What is your favorite color?",
+    error_message: "Please choose a real color.",
+    valid_choices: ["puce", "lime", "mauve"]
+  }
+}
