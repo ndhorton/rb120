@@ -619,7 +619,23 @@ puts dog.greeting # Displays: Barny says Woof Woof!
 
 
 
+**Quiz 1**
 
+Quiz 1
+
+'Large, complex programs can be difficult to maintain due to dependencies throughout the program. OOP lets programmers write programs in which the different parts of the program interact, thus reducing dependencies and facilitating maintenance'
+
+* Large, complex programs can be difficult to maintain due to dependencies throughout the program. OOP lets programmers write programs which are the interactions of smaller, sectioned-off parts of the program, reducing dependencies and improving maintainability
+
+
+
+'Coding in a non-OO way often means writing code that is useful solely within a single context. Defining basic classes and leveraging concepts like inheritance to introduce more detailed behaviors provides a greater level of reusability and flexibility.'
+
+* Non-OO design can often produce code that is tailored to a single context. OOP features, such as the ability to define simple base classes from which to derive more specialized classes through inheritance, provide a greater level of reusability and flexibility
+
+'Complex coding problems are often difficult to break down and solve in a clear and systematic way. Using OOP to model classes appropriate to the problem, and using real-word nouns to represent objects, lets programmers think at a higher level of abstraction that helps them break down and solve problems'
+
+* Complex problems can be difficult to break down into manageable parts. Using OOP to model classes logically appropriate to the problem, with nouns from the problem domain representing objects, allows programmers to think at a higher level of abstraction, and facilitates the analysis and solution of more complex problems
 
 
 

@@ -4,12 +4,12 @@
 
 **Definition**
 
-* Encapsulation is hiding pieces of functionality from the rest of the code base. Encapsulation separates interface from implementation
+* Encapsulation is hiding pieces of functionality from the rest of the code base, exposing interfaces and hiding implementations
 * Encapsulation is hiding the internal representation of an object from client code. Encapsulation lets us only expose the methods and properties that users of the object need to access.
 
 **Implementation**
 
-* In Ruby, encapsulation is achieved by the creation of objects. 
+* In Ruby, encapsulation is achieved by the creation of objects and exposing interfaces (methods) to interact with those objects 
 * Objects can encapsulate state via their instance variables
 * Objects expose interfaces through which the rest of the program (including other objects) can interact with them. An object's interface is its public instance methods
 * Method access control encapsulates implementation details, a class's private and protected methods, and only exposes attributes and methods through a public interface: the class's public methods
@@ -84,6 +84,9 @@
 * OOP thus attempts to reduce dependencies and avoid the problems of shared state in large, complex software projects
 * OOP also allows the programmer to think on a higher level of abstraction. Objects can represent domain-level 'nouns' or entities, and objects can act in ways that correspond to the domain-level behaviors the programmer wishes to model
 * In Ruby, this is achieved through a combination of encapsulation and polymorphism, facilitated by inheritance.
+* Large, complex programs can be difficult to maintain due to dependencies throughout the program. OOP lets programmers write programs which are the interactions of smaller, sectioned-off parts of the program, reducing dependencies and improving maintainability
+* Non-OO design can often produce code that is tailored to a single context. OOP features, such as the ability to define simple base classes from which to derive more specialized classes through inheritance, provide a greater level of reusability and flexibility
+* Complex problems can be difficult to break down into manageable parts. Using OOP to model classes logically appropriate to the problem, with nouns from the problem domain representing objects, allows programmers to think at a higher level of abstraction, and facilitates the analysis and solution of more complex problems
 
 -----
 
@@ -99,3 +102,6 @@
 * In Ruby, as long as an object exposes the right public methods and behaves appropriately in response to those methods being invoked, the client code does not need to concern itself with he type of the object. This agnosticism towards the type of an object passed to a piece of client code is known as duck typing. If an object walks like a duck and quacks like a duck, it can be treated as a duck.
 * While polymorphic behavior can be achieved in Ruby through class inheritance, and through the inclusion of mixin modules, duck typing means that objects that do not share any significant ancestors can still be treated polymorphically if they expose the appropriately named method (and as long as the return value or side effects of that method fit the purposes of the client code).
 * Duck typing can reduce dependencies in a piece of code. Client code does not need to have knowledge of the type of the object it is operating on or of the implementation details of the type. This can reduce code fragility and makes it easier to introduce new types of objects into an existing program without changing every method it might be passed to.
+
+
+
