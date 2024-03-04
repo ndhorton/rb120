@@ -75,36 +75,31 @@ Objects are instantiated from the class using the class method `new`, which in t
 
 **What is polymorphism?**
 
-So to take this as an example: it is necessary to read the questions ahead to understand the scope of this question in the exam. The following questions include:
+'Poly' means 'many' and 'morph' means 'forms'. Polymorphism is the ability for objects of different types to respond to a common interface, often, though not always, with different implementations. So if a method invokes a method with a particular name on the objects passed to it as arguments, the argument objects can be of any type so long as they expose a public method of that name with the correct number of parameters.
+
+Polymorphism allows for flexibility, facilitates code reuse in new contexts, and increases the maintainability of code.
 
 **Explain two different ways to implement polymorphism**
 
-So here, I think it is asking about inheritance and mixin modules
+There are two main ways to implement polymorphic structure in Ruby: through inheritance and through duck typing.
+
+Both class inheritance and interface inheritance via mixin modules allow us to share method definitions between classes. A subclass inherits method definitions from its superclass, and classes that mix in the same mixin module share the methods defined in that module. Subclasses and classes that mix in modules can override the inherited methods, providing a new implementation for the same interface.
+
+To implement polymorphism through duck typing, we can simply define methods of the same name (and with the same number of parameters) in two or more completely unrelated classes, which share neither a common superclass nor any mixin modules. Ruby allows these objects of totally different types to be passed to a piece of client code and to respond to the same method invocation. As long as the objects respond appropriately to the same method invocation to accomplish the task at hand, Ruby considers them of the correct category. The only type check is behavioral: whether they respond to the method call. If an object quacks like a duck, it can be treated as a duck.
 
 **How does polymorphism work in relation to the public interface?**
 
-Here, I think, it's ambiguous, since the next question is on duck typing. So you could end this question pointing in that direction. There probably will be overlap if you have several questions on a single topic. It's just not going to be possible to judiciously avoid repetition. Also use the SPOT links as clues
+Since polymorphism is the ability of objects of different types to respond to a common interface, the design of the public interface of a class is key to the overall polymorphic structure of a program. In order to be used polymorphically, objects of different classes need to expose public methods of the same name and with the same number of parameters.
 
-
+Classes may inherit part of their public interface through class inheritance, or through interface inheritance via mixin modules. They may take advantage of duck typing to implement public methods with the same name and number of parameters as other classes that are not related to them via inheritance. For their objects to be used polymorphically, it is only necessary that classes share a common subset of their public interfaces, i.e. the public methods necessary for the method invocations made by the polymorphic client code.
 
 **What is duck typing? How does it relate to polymorphism - what problem does it solve?**
 
-Duck typing applies the 'duck test' -- "if it quacks like a duck, it's a duck" -- to the type of objects. What this means is that Ruby code can take a behavioral approach to whether an object is of the right type for the task at hand. So if an object is passed to a method, that method can can
+Duck typing means that a given piece of code is not concerned with the class of an object passed to it, only with whether that object has the right behavior. If an object quacks like a duck, it can be treated as a duck. Which is to say, if an object has an appropriate public method with the right name, taking the right number of arguments, for the task at hand, duck typing considers it to be in the right category of object. There is no check made on the class of the object before the method is called at runtime.
 
+Duck typing is a form of polymorphism in which objects of completely unrelated types can be used polymorphically by client code. To implement polymorphic structure through duck typing, we can simply define in two or more unrelated classes the public methods with the names and parameter lists that are required by the polymorphic client code. Of course, in addition to having the right name and parameters, the method needs to behave appropriately to the polymorphic situation for there there to be meaningful polymorphic behavior.
 
+While polymorphic behavior can be implemented through class inheritance hierarchies, or through interface inheritance via mixin modules, duck typing offers a greater flexibility and maintainability. A new class can be created and have its objects be used by existing code simply by exposing the right public method, without the class needing to be slotted into an inheritance hierarchy. Duck typing can also reduce code dependencies. A piece of client code needs to know less about the objects it is passed in order to use them successfully.
 
+[example like that in the LS text, then one of adding a new class which exposes a method needed to be used in a client method] 
 
-
-Polymorphism is the ability of objects of different types to respond to a common interface,
-
- even if the implementation is different. 'Poly' means 'many' and 'morph' means 'forms', and this refers to the fact that many types of data can be used interchangeably by a given piece of client code. This means that a method or block that invokes a method with a certain name on its arguments will work with any objects that expose a method with that name.
-
-
-
-
-
-In Ruby, there are three main ways that polymorphic structure can be applied to classes: class inheritance, mixin modules, and duck typing. A class can share methods with other classes through inheriting them by subclassing a superclass. A class can share methods with other classes by mixing in a mixin module shared by other classes. These inherited or mixed in methods can be overridden with a specialized implementation, but, as long as it behaves appropriately, the method can still be used polymorphically.
-
-Ruby's duck typing means that completely unrelated classes (which share neither a superclass nor a mixin module) can expose a public method of a certain name with a certain number of parameters and be used polymorphically. A piece of polymorphic client code does not need to check the type of the objects passed to it at all, but can call a method with a certain number of arguments and so long as the object responds appropriately then the object is of the right category. Simply exposing the necessary interface for a given situation places the object in the right category with respect to duck typing. If an object quacks like a duck, we can treat it like a duck. 
-
-Polymorphism permits a reduction of code dependencies since client code can remain agnostic about the type of an object so long as it exposes a certain interface. This shift
