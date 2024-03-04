@@ -1,6 +1,6 @@
 **What is OOP and why is it important?**
 
- Object Oriented Programming is a programming paradigm intended to solve the problems of building and maintaining large, complex software projects. OOP provides facilities such as encapsulation, inheritance, and polymorphism in order to reduce code dependencies, avoid the problems of global state, and improve the scalability and maintainability of code
+ Object Oriented Programming is a programming paradigm intended to solve the problems of building and maintaining large, complex software projects. OOP provides facilities such as encapsulation, inheritance, and polymorphism in order to reduce code dependencies and improve the scalability and maintainability of code
 
 As non-OOP programs grow in scale and complexity, there can be a tendency for a program to become a mass of dependencies, with every part of the code base dependent on many other parts. This can make programs difficult to maintain, since any change or addition to one part could cause a ripple of adverse effects throughout
 
@@ -8,19 +8,7 @@ OOP attempts to solve these problems by providing ways to section off areas of c
 
 By abstracting away implementation details behind interfaces, OOP allows the programmer to think at a higher level of abstraction in terms of the 'nouns' of the problem domain, in terms of real world objects. OOP designs can thus help conceptually to break down and solve complex problems
 
-OOP features such as encapsulation, polymorphism, and inheritance, can also facilitate code reuse in a greater variety of contexts
-
-
-
-* Reduces code dependencies
-
-* Avoids problems of global state
-
-* Allows programmer to think at a higher level of abstraction, in terms of nouns modeling entities at the problem domain level, to think in terms of real world objects. This helps break down complex problems
-
-* Allows for flexible extension of existing code and the reuse of code in different contexts
-
-
+OOP features such as encapsulation, polymorphism, and inheritance, can also facilitate code reuse in a greater variety of contexts.
 
 ****
 
@@ -69,7 +57,7 @@ A class acts as a blueprint or template for objects of the class. The class pred
 
 Classes are defined using the keyword pair `class...end` and are named in PascalCase. 
 
-Objects are instantiated from the class using the class method `new`, which in turn calls the constructor instance method `initialize` which sets the initial state of the new individual object. 
+Objects are instantiated from a class using the class method `new`, which in turn calls the constructor instance method `initialize` which sets the initial state of the new individual object. 
 
 ----
 
@@ -97,9 +85,22 @@ Classes may inherit part of their public interface through class inheritance, or
 
 Duck typing means that a given piece of code is not concerned with the class of an object passed to it, only with whether that object has the right behavior. If an object quacks like a duck, it can be treated as a duck. Which is to say, if an object has an appropriate public method with the right name, taking the right number of arguments, for the task at hand, duck typing considers it to be in the right category of object. There is no check made on the class of the object before the method is called at runtime.
 
-Duck typing is a form of polymorphism in which objects of completely unrelated types can be used polymorphically by client code. To implement polymorphic structure through duck typing, we can simply define in two or more unrelated classes the public methods with the names and parameter lists that are required by the polymorphic client code. Of course, in addition to having the right name and parameters, the method needs to behave appropriately to the polymorphic situation for there there to be meaningful polymorphic behavior.
+Duck typing is a form of polymorphism in which objects of completely unrelated types can be used polymorphically by client code. To implement polymorphic structure through duck typing, we can simply define in two or more unrelated classes the public methods with the names and parameter lists that are required by the polymorphic client code. Of course, in addition to having the right name and parameters, the method needs to behave appropriately to the polymorphic context for there there to be meaningful polymorphic behavior.
 
-While polymorphic behavior can be implemented through class inheritance hierarchies, or through interface inheritance via mixin modules, duck typing offers a greater flexibility and maintainability. A new class can be created and have its objects be used by existing code simply by exposing the right public method, without the class needing to be slotted into an inheritance hierarchy. Duck typing can also reduce code dependencies. A piece of client code needs to know less about the objects it is passed in order to use them successfully.
+While polymorphic behavior can be implemented through class inheritance hierarchies, or through interface inheritance via mixin modules, duck typing offers a greater flexibility and maintainability. A new class can be created and have its objects be used by existing code simply by exposing the right public method, without the class needing to be slotted into an inheritance hierarchy. Duck typing can also reduce code dependencies; client code needs to know less about the objects it manipulates.
 
 [example like that in the LS text, then one of adding a new class which exposes a method needed to be used in a client method] 
 
+The problems solved by duck typing relate to code dependencies. Without duck typing, a piece of client code needs to know more about an object's representation in order to use it. And to implement polymorphic structure without duck typing, classes that might have stood on their own with duck typing would instead have to be inserted into some kind of inheritance relationship.
+
+----
+
+**What is inheritance?**
+
+Inheritance usually refers to class inheritance, whereby a class can subclass another class, which becomes its superclass, and thereby inherit the behaviors of the superclass. This means that instance methods from the superclass can be called on an instance of the subclass, and class methods of the superclass can be called on the subclass. The subclass can optionally override methods from the superclass, providing its own implementation. It still has access to the superclass method from within the overriding method definition via the `super` keyword. A class can only have one superclass in Ruby, though a class may have many subclasses. A superclass can in turn subclass another class, and so on in a chain of inheritance. The subclass is a specialized type with respect to the superclass; class inheritance represents an 'is-a' relationship.
+
+In Ruby, mixin modules used to distribute behaviors to one or more classes can be thought of as another form of inheritance; when the methods in the module include public methods, this is sometimes called 'interface inheritance'. When mixed in via the `Module#include` method, a mixin module is placed between the class and its superclass in the inheritance hierarchy. Instance methods defined in the mixin module can then be called on objects of the class. The class is not a specialized type with respect to the module. The inclusion of a module represents a 'has-a' relationship; the class has an ability provided by the module. A class can mix in as many modules as desired. Unlike superclasses, modules cannot themselves be instantiated.
+
+**What is the difference between a subclass and a superclass?**
+
+In relation to the subclass, a superclass represents a basic class with broad reusability. The subclass represents a specialized type of the superclass, with more fine-grained, detailed behaviors, appropriate to more specific contexts.
