@@ -103,4 +103,444 @@ In Ruby, mixin modules used to distribute behaviors to one or more classes can b
 
 **What is the difference between a subclass and a superclass?**
 
-In relation to the subclass, a superclass represents a basic class with broad reusability. The subclass represents a specialized type of the superclass, with more fine-grained, detailed behaviors, appropriate to more specific contexts.
+In relation to the subclass, a superclass represents a basic class with broad reusability. The subclass represents a specialized type with respect to the superclass, with more fine-grained, detailed behaviors, appropriate to more specific or concrete contexts.
+
+**What is a module?**
+
+A module is a collection of methods and constants. Like a class, a module contains shared behaviors, but, unlike a class, a module cannot be instantiated. A module containing instance methods can be mixed in to a class using the `Module#include` method, which makes those methods available to instances of the class. This is called a mixin. Whereas a class can only have one superclass, it can mix in as many modules as necessary.
+
+In addition to their use as mixins, modules also have uses for namespacing and as stand-alone containers for methods. A module can be used to group related classes (or other modules) under a namespace. This is done to organize code conceptually, and to prevent name collisions with classes of the same name in other parts of the codebase. In order to reference a class within a module, we use the `::` operator, e.g. `NamespaceModule::ClassName`.
+
+Modules can also be used as stand-alone containers for methods that are sometimes called 'module methods'. This can be done to group related methods that do not logically belong to any particular class within the program. Module methods are called directly on the module using the dot operator, similarly to class methods.
+
+**What is a mixin?**
+
+A mixin is a particular use of a Ruby module, often to implement polymorphism. A module that is a collection of instance methods can be mixed in to a class using the `Module#include` method, after which the class has access to the module's instance methods. This is sometimes called 'interface inheritance'. The mixin module will be inserted into the method lookup path between the class and its superclass. Ruby only allows single inheritance. Yet though a class can only have one superclass, it can have multiple mixin modules. Multiple mixed in modules appear in the method lookup path in reverse order of their inclusion into the class. Mixin modules can therefore be used to solve the problems that other languages use multiple inheritance to address, such as the need to give shared functionality to two classes in an inheritance hierarchy whose existing where the shared functionality cannot be extracted to an existing superclass without providing it to classes that should not share it.
+
+Whereas a subclass is a specialized type with respect to its superclass, modeling an 'is-a' relationship, the relationship between a class and a mixin module it includes represents a 'has-a' relationship. The class 'has-an' ability provided by the module. Thus an including class is not a specialized type with respect to the module.
+
+**When is is good to use inheritance?**
+
+[assuming they mean class inheritance from the context given by the link]
+
+Class inheritance is very useful for modeling hierarchical relationships in the problem domain. If there is a natural hierarchical relation between two problem domain entities, modeling the entities as superclass and subclass expresses this relationship well.
+
+[in case they also mean inheritance via mixin modules]
+
+By contrast, if the two entities in the problem domain do not have a hierarchical relationship but do share the same ability or trait, then a shared mixin module expresses this more clearly.
+
+**In inheritance, when would it be good to override a method?**
+
+A subclass is a specialized type with respect to its superclass. This means that a method inherited from the superclass might in some cases need to be overridden with a more fine-grained, detailed implementation that provides the more specific functionality needed by the subclass.
+
+---
+
+**What is the method lookup path?**
+
+The method lookup path is the order of classes and modules that Ruby will search for a method definition when a method is invoked. After searching the class of the object on which the method is called, Ruby will search any mixed in modules in reverse order of their inclusion. After this, Ruby begins this process again with the superclass and its modules. Ruby then moves on to the superclass of the superclass, and so on. Since most Ruby objects inherit from class `Object`, the final three terms of the method lookup chain are usually the `Object` class, the `Kernel` module, and lastly the `BasicObject` class. If the method is still not found, a `NoMethodError` is raised. The method lookup path for a class of objects can be discovered by calling the `Module#ancestors` class method on the class. This returns an array of classes and modules in the order of the method lookup path.
+
+----
+
+**When defining a class, we usually focus on state and behaviors. What is the difference between these two concepts?**
+
+An object's state refers to the values associated to an individual object, which are tracked by its instance variables. The behaviors of an object are its available actions, defined in its class (or in its inheritance hierarchy) as instance methods. Objects encapsulate their own, unique state. Objects share behaviors with the other objects of its class. Instance variables track an individual object's state, and instance methods expose an object's behaviors. A class predetermines its objects behaviors. A class also predetermines the attributes its objects might have, meaning the names of instance variables initialized by an object's instance methods and any public access to these instance variables via instance methods. However, the state of an object refers to the values referenced by a particular object's particular instance variables, and so each object of a class has its own particular state.
+
+----
+
+**How do you initialize a new object?**
+
+Objects are usually initialized by a call to the class method `new`. After allocating memory for the new object, `new` calls the constructor, the private instance method `initialize`, passing through its arguments; the `initialize` constructor uses the arguments to set the initial state of the object. The call to `new` on the class returns a new instance of that class.
+
+```ruby
+class Cat
+  def initialize(n)
+    puts "Initializing a new #{self.class}"
+    @name = n # setting initial state of object
+  end
+end
+
+felix = Cat.new("Felix") # "Initializing a new Cat"
+puts felix.inspect       # "<Cat:0x... @name="Felix">"
+```
+
+**What is a constructor method?**
+
+A constructor method sets the initial state of an object when the object is instantiated. In Ruby, the constructor is a private instance method called `initialize`. When the `new` class method is called on a class, `new` allocates memory for the object and then passes any arguments through to the `initialize` method to set the initialize state of the newly-instantiated instance. 
+
+```ruby
+class Cat
+  def initialize(n)
+    puts "Constructing a new #{self.class} object with argument '#{n}'..."
+    @name = n
+  end
+end
+
+felix = Cat.new("Felix") # Constructing a new Cat object with argument 'Felix'
+puts felix.inspect # <Cat:0x... @name="Felix">
+```
+
+---
+
+**What is an instance variable, and how is it related to an object?**
+
+An instance variable is a variable that tracks an object's state. An instance variable name begins with an `@`. Instance variables are scoped at the object level. Once initialized, an instance variable can exist for the lifetime of the object and can be directly accessed from within any instance method of the class. An attempt to reference an uninitialized instance variable will evaluate to `nil` without the variable being initialized.
+
+Instance variables can only be directly initialized and accessed from within instance method definitions in an object's class. In order for client code to interact with an object's instance variables, public instance methods must be exposed to set or retrieve the reference of the instance variable; these are called setter and getter methods.
+
+Instance variables are not directly inherited; rather, a class inherits instance methods and, once called, these may initialize instance variables in the object. 
+
+Instance methods associate data to a particular object, separate from the state of all other objects, facilitating encapsulation at the object level. Unlike local variables, an instance variable can persist for as long as its object exists, but since instance variables preserve encapsulation, they obviate the problems of global variables. Every object's state is distinct, and an object's instance variables track its unique state.
+
+----
+
+**What is an instance method?**
+
+An instance method is a method that is available to instances of a class. The behaviors an object can perform are defined by its instance methods. The public instance methods available to an object comprise the interface of the object, through which client code can interact with the object.
+
+Private and protected instance methods can only be called from within another instance method within the class, and represent encapsulated internal functionality that should not be publicly available. Public instance methods, representing the object's public interface, can be called from outside the class by using the dot operator on the calling object. 
+
+Instance methods are defined within a class or module definition using the `def...end` keyword pair. Instance methods defined within a class are available to instances of that class. Additionally, a subclass inherits instance methods from its superclass. If a module containing instance method definitions is mixed in to a class, then those instance methods are available to objects of that class. The total set of methods available to an object include those defined in every class and module in the method lookup path of the object's class.
+
+----
+
+**How do objects encapsulate state?**
+
+Objects encapsulate state via their instance variables. An object's instance variables are particular to that object and track the individual state of that object. The state tracked by an object's instance variables consists of other objects, sometimes called 'collaborator objects'.
+
+In Ruby, instance variables can only be directly set or referenced from within instance methods within the class. Client code can only access an object's instance variables indirectly via `public` getter or setter methods. If no such methods are defined for an instance variable, or the methods are `private` or `protected`, the variable cannot be referenced or set from outside the object.
+
+----
+
+**What is the difference between classes and objects?**
+
+A class acts as a blueprint or template for objects, which are instances of that class. A class predetermines what an object is made of (its attributes, tracked by instance variables) and how it should behave (its instance methods). The particular state tracked by an object's instance variables is unique to that object. A class groups common behaviors; an object encapsulates state. An object is thus a concrete, individual instantiation of an abstract, general class definition.
+
+----
+
+**How can we expose information about the state of the object using instance methods?**
+
+Instance methods can expose information about the state of an object by returning or outputting references to the object's instance variables.
+
+```ruby
+class Cat
+  def initialize(name, color)
+    @name = name
+    @color = color
+  end
+  
+  def to_s
+    "#{@name} is a #{@color} #{self.class.to_s.downcase}"
+  end
+end
+
+felix = Cat.new("Felix", "black and white")
+puts felix # "Felix is a black and white cat"
+```
+
+Here, the `Cat#to_s` instance method uses string interpolation to construct a string containing information about the `Cat` object's state -- specifically, the values of instance variables `@name` and `@color`.
+
+Instance methods that allow public retrieval of the reference of a single instance variable are called getter methods. They are usually defined with the name of the instance variable:
+
+```ruby
+class Cat
+  def initialize(n)
+    @name = n
+  end
+  
+  def name
+    @name
+  end
+end
+
+felix = Cat.new("Felix")
+puts felix.name # "Felix"
+```
+
+A more concise syntax to define the same method exists, courtesy of the `Module#attr_reader` method:
+
+```ruby
+class Cat
+  attr_reader :name
+
+  def initialize(n)
+    @name = n
+  end
+end
+```
+
+---
+
+**What is a collaborator object, and what is the purpose of using collaborator objects in OOP?**
+
+A collaborator object is an object, generally stored as part of another object's state, whose functionality contributes towards the fulfillment of responsibilities by the other object. The behavior of the collaborator contributes to the behavior expected of the object. Since the collaborator is stored as part of the object's state, this is a relationship of association, a 'has-a' relationship. Collaborators are associated to an object via its instance variables. Since an object holds a reference to its collaborator, it can invoke methods on the collaborator from within its own methods. Collaboration thus represents the connections between the actors (objects) in the program.
+
+Collaboration relationships exist from the design phase onward. When designing classes, it is important to consider collaboration relationships with other classes. The significant collaborators of a class are the custom classes whose objects will become part of the class's objects' states, and whose objects' behavior will help the class's objects carry out their responsibilities.
+
+The purpose of using collaborator objects is to model the connections between entities in the problem domain as the message-passing connections between actors (objects) in our program. This kind of design helps modularize the problem into separate, connected, pieces, facilitating code reuse and improving maintainability
+
+---
+
+**What is an accessor method?**
+
+An accessor method is a method whose role is to provide mediated access to an instance variable. A method that retrieves the reference of an instance variable is called a getter method, and is conventionally named with the same name as the variable (without the `@`). A method that sets the instance variable is called a setter method, and conventionally shares the name of the variable but with an `=` appended (to take advantage of Ruby's assignment-style syntactic sugar for setter methods).
+
+In Ruby, access to instance variables is restricted to the class. Public accessor methods thus provide a way for client code to set or retrieve the reference of an object's instance variables.
+
+```ruby
+class Cat
+  def name
+    @name
+  end
+  
+  def name=(n)
+    @name = n
+  end
+end
+
+felix = Cat.new
+felix.name = "Felix"
+puts felix.name # "Felix"
+```
+
+Setter and getter methods can also be used within the class, even though instance variables can here be accessed directly. Using setters and getters in this context rather than variable references can enhance maintainability. For instance, if a check always needs to be performed on an object before it can be considered safe to reassign the instance variable to it, a setter method allows us to extract this check to a single place from the many places where reassignment might occur. Likewise, if we need to format or manipulate the state tracked by an instance variable every time it is referenced, a getter method allows that to be performed in a single place.
+
+```ruby
+class Bookshelf
+  # rest of class omitted...
+  
+  def books       # a getter method
+    @books ||= [] # allows the initialization of the @books variable if necessary
+  end
+  
+  def add(book)
+    books << book # if this is the first `add` call, @books will be initialized to
+  end             # an array when `books` is called
+end
+
+class Book
+  def initialize(title, author)
+    @title = title
+    @author = author
+  end
+  
+  def to_s
+    "'#@title', by #@author"
+  end
+  
+  # rest of class omitted...
+end
+
+shelf = Bookshelf.new
+shelf.add(Book.new("The Trial", "Franz Kafka")) # @books array initialized here
+shelf.add(Book.new("Swann's Way", "Marcel Proust")) # simple append to array
+puts shelf.books 
+# => 'The Trial', by Franz Kafka
+# => 'Swann's Way', by Marcel Proust
+```
+
+This example demonstrates using a getter method within the class on line 7 to make sure the instance variable `@books` always references an array. If we referenced `@books` directly and it had not been initialized then the `<<` method would be called on `nil` and a `NoMethodError` raised.
+
+Accessor methods can be generated by calling `Module#attr_accessor`, `Module#attr_reader`, or `Module#attr_writer`. Passing a symbol to `attr_accessor` will create a getter method and setter method for an instance variable with the name given by the symbol. The `attr_reader` method only creates the getter; the `attr_writer` method only creates the setter.
+
+So:
+
+```ruby
+class Cat
+  attr_accessor :name
+end
+```
+
+is equivalent to:
+
+```ruby
+class Cat
+  def name
+    @name
+  end
+  
+  def name=(n)
+    @name = n
+  end
+end
+```
+
+**What is a getter method?**
+
+A getter method is an instance method that returns the reference of a single instance variable. Getter methods are conventionally named after the variable they set.
+
+```ruby
+class Cat
+  def initialize(n)
+    @name = n
+  end
+  
+  def name # a getter method
+    @name
+  end
+end
+
+felix = Cat.new("Felix")
+puts felix.name # "Felix"
+```
+
+Since they are so common, there is a shorthand way to create getter methods: using the `Module#attr_reader` method.
+
+```ruby
+class Cat
+  attr_reader :name
+
+  def initialize(n)
+    @name = n
+  end
+end
+
+felix = Cat.new("Felix")
+puts felix.name # "Felix"
+```
+
+Since instance variables can only be directly referenced within instance methods within the class, public getter methods are the only way to reference an instance variable from outside the class. If there is no getter method, the variable remains hidden from client code.
+
+A getter method might also be used within the class, especially if the value of the variable needs to be manipulated when being retrieved.
+
+```ruby
+class CustomerRecord
+  def initialize(name, card_number)
+    @name = name
+    @bank_number = card_number
+  end
+  
+  def show_details
+    puts "Customer name: #{name}"
+    puts "Payment method: #{card_number}"
+  end
+  
+  def card_number
+    "xxxx-xxxx-xxxx-#{@card_number[-4..-1]}"
+  end
+  
+  # rest of class omitted
+end
+
+customer = CustomerRecord("Michael Smith", "4321-1234-3241-8762")
+customer.show_details
+# Customer name: Michael Smith
+# Payment method: xxxx-xxxx-xxxx-8762
+```
+
+Here, we extract the logic of obscuring the customer's credit card number to the getter method, meaning that we do not need to repeat this code whenever the obscured card number needs to be referenced. This reuse of code improves maintainability, since if we need to change the logic it only needs to be changed in one place.
+
+**What is a setter method?**
+
+A setter method is an instance method that sets a single instance variable. Setter methods are conventionally named after the variable they set, but with an `=` appended. The `=` at the end of the name allows us to use Ruby's assignment-style syntactic sugar when invoking setter methods.
+
+Since instance variables can only be directly set within the class, a public setter method is necessary if we want client code to be able to set an instance variable.
+
+```ruby
+class Cat
+  def initialize(n)
+    @name = n
+  end
+  
+  def speak
+    "#@name says meow!"
+  end
+  
+  def name=(new_name) # getter method
+    @name = new_name
+  end
+end
+
+kitty = Cat.new("Tom")
+kitty.speak # "Tom says meow!"
+kitty.name = "Felix"             # assignment-style syntactic sugar
+kitty.speak # "Felix says meow!"
+```
+
+Here we have a `Cat` class which, on lines 10-13, defines a setter method called `name=` for the instance variable `@name`. Since we used the `=` naming convention, we can use assignment-style syntactic sugar on line 17 where we invoke the setter to change the cat's name. This syntax is semantically equivalent to `kitty.name=("Felix")`.
+
+Setter methods might also be used within the class instead of directly setting the instance variable. When this is done, we must call the setter method explicitly on `self` in order to disambiguate the setter invocation from the initialization of a local variable.
+
+```ruby
+class RationalNumber
+  def initialize(numerator, denominator)
+    @numerator = numerator
+    self.denominator = denominator # getter methods must be called on `self`
+  end
+  
+  def denominator=(denominator) # getter method
+    if denominator.zero?
+  	  raise ZeroDivisionError, "#{self.class}: denominator cannot be 0"
+    end
+    @denominator = denominator
+  end
+  
+  # rest of class omitted...
+end
+
+rat1 = RationalNumber.new(1, 2) # fine
+rat2 = RationalNumber.new(3, 0) # "RationalNumber: denominator cannot be 0"
+```
+
+Here, our `RationalNumber` class uses the setter method `denominator=` within the class in order to raise an exception if client code attempts to create a mathematically-undefined rational number object. Extracting the logic that performs a check to a setter method means that any changes to the implementation of the check only have to be made in one place. The potential for code reuse in using setter methods to set instance variables within the class thus improves code maintainability.
+
+**What is `attr_accessor`?**
+
+The `Module#attr_accessor` method is used at the class level to generate setter and getter methods for instance variables. The `attr_accessor` method takes symbols as arguments and uses them as the template for the names of the getter, setter, and the instance variable they provide access to.
+
+So that:
+
+```ruby
+class Cat
+  attr_accessor :name
+end
+```
+
+is equivalent to:
+
+```ruby
+class Cat
+  def name=(n)
+    @name = n
+  end
+  
+  def name
+    @name
+  end
+end
+```
+
+**How do you decide whether to reference an instance variable or a getter method?**
+
+In general, using a getter method is preferable to referencing an instance variable directly. This is because a getter method gives us a single place in which to manipulate the value the variable references before returning it. If we need to partially hide, format or otherwise manipulate the data referenced by the variable, we can implement this logic in one place rather than in every place the variable is referenced, making code more maintainable and less likely to contain bugs.
+
+For instance,
+
+```ruby
+class CustomerRecord
+  attr_reader :name
+
+  def initialize(name, card_number)
+    @name = name
+    @card_number = card_number
+  end
+  
+  def show_details
+    puts "Customer name: #{name}"
+    puts "Payment details: #{card_number}"
+  end
+  
+  def card_number
+    "xxxx-xxxx-xxxx-#{@card_number[-4..-1]}"
+  end
+  
+  # rest of class omitted...
+end
+
+customer = Customer.new("Michael Smith", "4321-1234-2315-9823")
+customer.show_details
+# => Customer name: Michael Smith
+# => Payment details: xxxx-xxxx-xxxx-9823
+```
+
+In this example `CustomerRecord` class, any time throughout our class that the obscured version of the customer's `@card_number` string needs to be used, we can simply call the `card_number` getter method rather than repeatedly formatting the string to hide the information.
+
