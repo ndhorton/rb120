@@ -779,7 +779,7 @@ However, a class variable will also be shared with any subclasses and their inst
 
 **What is a constant variable?**
 
-A constant variable in Ruby is a variable that, once initialized, should not change. If a constant is reassigned outside of a method definition, Ruby will give a warning. If you attempt to initialize or reassign a constant within a method definition, Ruby will raise a `SyntaxError`.
+A constant variable in Ruby is a variable that we do not want to change, once defined. If a constant is reassigned outside of a method definition, Ruby will give a warning. If you attempt to initialize or reassign a constant within a method definition, Ruby will raise a `SyntaxError`.
 
 Unlike other variables in Ruby, constants have lexical scope. This means that when Ruby encounters a reference to a constant, it will first search the lexically-enclosing structure (a module or class) and then search any lexically-enclosing structures that the first structure is nested within. (Lexical means expressed textually in the source code; e.g., one structure is lexically nested within another if it is textually contained within the `module...end` or `class...end` keywords of another.) If this lexical search does not find a definition to resolve the constant, Ruby searches the inheritance hierarchy starting with the lexically-enclosing structure, the class or module containing the reference to the constant.
 
@@ -794,6 +794,77 @@ puts Mathematics::PI # 3.14159
 ```
 
 Constants are generally used to give a symbolic name to a fixed value. They can make code more readable and therefore more maintainable.
+
+----
+
+**What is the default `to_s` method that comes with Ruby, and how do you override this?**
+
+The `to_s` method in Ruby that a custom class will inherit by default from the `Object` class returns a string of the form `"<ClassName:0x...>"`, where `ClassName` stands in for the name of the class and `0x...` stands in for an encoding of the object's unique object id.
+
+```ruby
+class Cat
+  def initialize(name, coat)
+    @name = name
+    @coat = coat
+  end
+end
+
+felix = Cat.new("Felix", "tabby")
+puts felix.to_s # <Cat:0x...>
+```
+
+In order to override this behavior, it is only necessary to implement a method named `to_s` in our custom class.
+
+```ruby
+class Cat
+  def initialize(name, coat)
+    @name = name
+    @coat = coat
+  end
+  
+  def to_s
+    "#@name is a #@coat cat"
+  end
+end
+
+felix = Cat.new("Felix", "tabby")
+puts felix.to_s # "Felix is a tabby cat"
+```
+
+`Kernel#puts` implicitly calls `to_s` on its arguments but an explicit call to `to_s` is made here for illustration purposes.
+
+When overriding the `Object#to_s` method, it is important that our new implementation returns a string. Otherwise, when `to_s` is called implicitly, as when the object is passed to `puts`, Ruby resorts to calling the `Object#to_s` method and returning the default `<ClassName:0x...>` string representation.
+
+----
+
+**What are some important attributes of the `to_s` method?**
+
+The `to_s` method is built in to every class in Ruby. It returns a string representation of the object. It is often called implicitly, as when an object is passed to the `Kernel#puts` method, or when an object is interpolated into a string.
+
+ A custom class defined without an explicit superclass will inherit the `Object#to_s` method. This returns a string of the form `<ClassName:0x...>`, where `ClassName` is the name of the class of the calling object and `0x...` is an encoding of the object's object id.
+
+When overriding the `to_s` method to return a more useful string representation for objects of a custom class, it is important to ensure that we return a String object. If our custom `to_s` does not return a string and `to_s` is called implicitly, as when the object is passed to `puts`, Ruby will resort to calling a `to_s` method higher up the inheritance hierarchy, usually `Object#to_s`, in order to obtain a String. 
+
+---
+
+**From within a class, when an instance method uses `self`, what does it reference?**
+
+When `self` is used within an instance method definition within a class, it dynamically references the instance of the class that called the instance method.
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def output_self
+    puts self.inspect
+  end
+end
+
+felix = Cat.new("Felix")
+felix.output_self # <Cat:0x... @name="Felix">
+```
 
 ----
 
