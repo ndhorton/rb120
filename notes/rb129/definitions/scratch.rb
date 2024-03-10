@@ -1,19 +1,19 @@
-class Parent
-  def to_s
-    "foo"
+def foo()
+  puts "Entering foo()"
+  begin
+    1 / 0
+  rescue ZeroDivisionError => e
+    puts "Inside rescue clause"
+  ensure
+    puts "Inside ensure clause"
   end
+  puts "back in main flow of foo()"
 end
 
-class Child < Parent
-  def to_s
-    42
-  end
+puts "Calling foo()"
+begin
+  foo()
+rescue ZeroDivisionError => e
+  puts "back outside foo() in main rescue handler"
 end
-
-c = Child.new
-puts c.class.superclass
-puts c.to_s
-puts c
-
-p = Parent.new
-puts p
+puts "back outside foo()"

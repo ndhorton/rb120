@@ -14,6 +14,20 @@ OOP features such as encapsulation, polymorphism, and inheritance, can also faci
 
 **What is encapsulation?**
 
+Encapsulation means to contain as though within a capsule. Encapsulation means sectioning of areas of code and data into units that define the boundaries within an application. The surface area of the boundary can be restricted to a deliberately defined interface, and the rest of the application can interact with the data and functionality within the unit only through this interface. The implementation information and data can thus be protected within the boundary, behind the unchanging interface, so that the rest of the application does not form dependencies on details that are liable to change. Additionally, the data contained in the unit can be protected from accidental modification by the rest of the application, especially in ways that might impair the unit's functionality.
+
+In Ruby, this encapsulation is achieved by the creation of objects from classes. Objects encapsulate state, tracked by their instance variables. Ruby restricts access to an object's instance variables to its instance methods. If we want to make the reference or setting of an instance variable part of the public interface of the object, we must define instance methods in the class granting access (getter or setter methods). Ruby provides further granularity in defining the interface (and concealing the implementation) of an object through method access control, allowing us to designate certain methods as internal implementation 'helper' methods that should not be depended on by client code. This means that users of the class need only know (and their code only become dependent on) the interface: the public method names and their parameter lists, and what return values or publicly significant side-effects to expect from the public methods.
+
+[This last sentence could be abstracted a bit more. The public interface consists of predictable behavior and attributes?]
+
+
+
+By sectioning off code and data in this way, encapsulation facilitates abstraction in thinking and in the design of programs. Breaking down the problem domain into classes helps us reduce the overall problem into smaller problems during the design phase. A class of object can model 'real-world objects', domain-level entities or 'nouns', which allows us to think and solve problems at the problem domain level.
+
+By permitting us to hide the internal representation of objects, encapsulation reduces code dependencies, making our programs more robust and maintainable. And by allowing us to logically group related functionality into reusable units, encapsulation also facilitates code reuse, which reduces opportunities for programmer error and further improves maintainability.
+
+--
+
 Encapsulation is hiding functionality from the rest of the code base behind a publicly exposed interface, and protecting data from being changed without deliberate intent.
 
 In Ruby, encapsulation is achieved by the creation of objects which client code can only interact with via their public interfaces. Objects encapsulate state, tracked by their instance variables, as well as concealing parts of their internal functionality, and selectively expose public methods through which client code can interact with them.
@@ -867,4 +881,36 @@ felix.output_self # <Cat:0x... @name="Felix">
 ```
 
 ----
+
+**What happens when you use `self` inside a class but outside of an instance method?**
+
+When the `self` keyword is used within a class but outside of any instance method definition, `self` references the class itself.
+
+```ruby
+class Person
+  puts self # "Person"
+end
+```
+
+This allows us to use `self` to define class methods, since
+
+```ruby
+class Temperature
+  def Temperature.celsius_to_fahrenheit(celsius)
+    celsius * 9 / 5.0 + 32
+  end
+end
+```
+
+is equivalent to
+
+```ruby
+class Temperature
+  def self.celsius_to_fahrenheit(celsius)
+    celsius * 9 / 5.0 + 32
+  end
+end
+```
+
+The use of `self` at the class level is useful means that if the name of the class were to change, we would not need to change every reference to it within the class.
 
