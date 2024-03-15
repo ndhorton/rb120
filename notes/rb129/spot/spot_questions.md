@@ -14,13 +14,16 @@ OOP features such as encapsulation, polymorphism, and inheritance, can also faci
 
 **What is encapsulation?**
 
-Encapsulation means to contain as though within a capsule. Encapsulation means sectioning of areas of code and data into units that define the boundaries within an application. The surface area of the boundary can be restricted to a deliberately defined interface, and the rest of the application can interact with the data and functionality within the unit only through this interface. The implementation information and data can thus be protected within the boundary, behind the unchanging interface, so that the rest of the application does not form dependencies on details that are liable to change. Additionally, the data contained in the unit can be protected from accidental modification by the rest of the application, especially in ways that might impair the unit's functionality.
+Encapsulation means to contain as though within a capsule. Encapsulation means sectioning of areas of functionality and data into units that define the boundaries within an application. Data and functionality within this boundary can be protected and only exposed selectively to the rest of the application through a simplified interface. The rest of the application should interact with the data and functionality within the unit only through this interface. The implementation information and data can thus be protected within the boundary, behind the unchanging interface, so that the rest of the application does not form dependencies on details that are liable to change. Additionally, the data contained in the unit can be protected from accidental modification by the rest of the application.
 
-In Ruby, this encapsulation is achieved by the creation of objects from classes. Objects encapsulate state, tracked by their instance variables. Ruby restricts access to an object's instance variables to its instance methods. If we want to make the reference or setting of an instance variable part of the public interface of the object, we must define instance methods in the class granting access (getter or setter methods). Ruby provides further granularity in defining the interface (and concealing the implementation) of an object through method access control, allowing us to designate certain methods as internal implementation 'helper' methods that should not be depended on by client code. This means that users of the class need only know (and their code only become dependent on) the interface: the public method names and their parameter lists, and what return values or publicly significant side-effects to expect from the public methods.
+In Ruby, encapsulation is achieved by the creation of objects from classes. Objects encapsulate state, tracked by their instance variables. Ruby restricts access to an object's instance variables to the object's instance methods. If we want to make reference to, or setting of, an instance variable part of the public interface of the object, we must define instance methods in the class granting access to the variable (getter or setter methods). Ruby provides further granularity in defining the interface (and concealing the implementation) of an object through method access control, allowing us to designate certain methods (`private`, `protected`) as internal implementation details that should not be depended on by client code. This means that users of the class need only know (and their code only become dependent on) the interface: the public method names and their parameter lists (and what return values or publicly significant side-effects to expect from the public methods).
+
+* classes and objects, instance variables (encapsulation of state)
+* method access control
 
 [This last sentence could be abstracted a bit more. The public interface consists of predictable behavior and attributes?]
 
-
+Encapsulation involves setting boundaries around data and functionality, and using information hiding to conceal implementation behind interface, in order to facilitate abstraction and the separation of concerns, reducing code dependencies.
 
 By sectioning off code and data in this way, encapsulation facilitates abstraction in thinking and in the design of programs. Breaking down the problem domain into classes helps us reduce the overall problem into smaller problems during the design phase. A class of object can model 'real-world objects', domain-level entities or 'nouns', which allows us to think and solve problems at the problem domain level.
 
@@ -77,7 +80,11 @@ Objects are instantiated from a class using the class method `new`, which in tur
 
 **What is polymorphism?**
 
-'Poly' means 'many' and 'morph' means 'forms'. Polymorphism is the ability for objects of different types to respond to a common interface, often, though not always, with different implementations. So if a method invokes a method with a particular name on the objects passed to it as arguments, the argument objects can be of any type so long as they expose a public method of that name with the correct number of parameters.
+'Poly' means 'many' and 'morph' means 'forms'. Polymorphism is the ability for objects of different types to respond to a common interface, often, though not always, with different implementations. 
+
+[the below paragraph is more duck typing?]
+
+So if a method invokes a method with a particular name on the objects passed to it as arguments, the argument objects can be of any type so long as they expose a public method of that name with the correct number of parameters.
 
 Polymorphism allows for flexibility, facilitates code reuse in new contexts, and increases the maintainability of code.
 
@@ -121,9 +128,20 @@ The problems solved by duck typing relate to code dependencies. Without duck typ
 
 **What is inheritance?**
 
-Inheritance usually refers to class inheritance, whereby a class can subclass another class, which becomes its superclass, and thereby inherit the behaviors of the superclass. This means that instance methods from the superclass can be called on an instance of the subclass, and class methods of the superclass can be called on the subclass. The subclass can optionally override methods from the superclass, providing its own implementation. It still has access to the superclass method from within the overriding method definition via the `super` keyword. A class can only have one superclass in Ruby, though a class may have many subclasses. A superclass can in turn subclass another class, and so on in a chain of inheritance. The subclass is a specialized type with respect to the superclass; class inheritance represents an 'is-a' relationship.
+Inheritance in Ruby can refer to class inheritance, but also to inheritance through mixin modules, sometimes called 'interface inheritance'.
+
+Class inheritance, whereby a class can subclass another class, which becomes its superclass, and thereby inherit the behaviors of the superclass. This means that instance methods from the superclass can be called on an instance of the subclass, and class methods of the superclass can be called on the subclass. A class can only have one superclass in Ruby, though a class may have many subclasses. A superclass can in turn subclass another class, and so on in a chain of inheritance. The subclass is a specialized type with respect to the superclass; class inheritance represents an 'is-a' relationship.
 
 In Ruby, mixin modules used to distribute behaviors to one or more classes can be thought of as another form of inheritance; when the methods in the module include public methods, this is sometimes called 'interface inheritance'. When mixed in via the `Module#include` method, a mixin module is placed between the class and its superclass in the inheritance hierarchy. Instance methods defined in the mixin module can then be called on objects of the class. The class is not a specialized type with respect to the module. The inclusion of a module represents a 'has-a' relationship; the class has an ability provided by the module. A class can mix in as many modules as desired. Unlike superclasses, modules cannot themselves be instantiated.
+
+Each Ruby class has a method lookup path which Ruby uses when a method is called on an instance of that class. Methods inherited from either a superclass or a mixin module can be overridden by a new definition in the inheriting class. This works because the class of the instance comes before the superclass in the method lookup path and once Ruby finds a method with the right name, it stops looking. The superclass or mixin method can be called from within the overriding method by use of the keyword `super`.
+
+* class inheritance
+* mixin modules
+* method lookup path
+* method overriding
+
+
 
 **What is the difference between a subclass and a superclass?**
 
@@ -914,3 +932,580 @@ end
 
 The use of `self` at the class level is useful means that if the name of the class were to change, we would not need to change every reference to it within the class.
 
+----
+
+**Why do you need to use `self` when calling private setter methods?**
+
+Private setter methods can only be called within instance methods definitions within the class. When calling any setter method within the class, it is necessary to call the setter method on `self` explicitly in order to disambiguate the method call from the initialization of a local variable.
+
+```ruby
+class Cat
+  def initialize(n)
+    @name = n
+  end
+  
+  def change_name(new_name)
+    name = new_name # initializes new local variable `name`
+  end
+  
+  attr_reader :name
+  
+  private
+  
+  attr_writer :name
+end
+
+kitty = Cat.new("Kitty")
+puts kitty.name # Kitty
+kitty.change_name('Felix')
+puts kitty.name # Kitty
+```
+
+The above example does not produce the desired results because the attempt to call the setter method `name=` implicitly on the current object is syntactically confused with the initialization of a local variable `name`. Even doing away with the syntactic sugar around setter methods will not work either: `name=(new_name)` will be understood by Ruby as `name = (new_name)` and a new local variable `name` will still be initialized with the value of `new_name`.
+
+In order to disambiguate the syntax, we must call the setter on `self`, an explicit reference to the current object.
+
+```ruby
+class Cat
+  # code omitted
+  def change_name(new_name)
+    self.name = new_name # explicit reference to current object
+  end
+  # ...
+  private
+  
+  attr_writer :name
+end
+
+kitty = Cat.new("Kitty")
+puts kitty.name # "Kitty"
+kitty.change_name("Felix")
+puts kitty.name # Felix
+```
+
+This explicit `self.` syntax would be necessary within the class even if the setter method `name=` were not private.
+
+Before Ruby 2.7, it was illegal to call private methods on `self` unless the method was a setter method. In all more recent versions, it is now legal to call any private method on `self` within the class (though `self` is the only explicit caller permitted for private methods).
+
+----
+
+**Why use `self`, and how does `self` change depending on the scope it is used in?**
+
+There are two extremely common reasons to use `self`. One example is within the instance methods within a class, in which scope `self` references the calling object. The other example is at the class level, where `self` references the class itself. 
+
+When calling setter methods within the class within an instance method, we must explicitly call the setter method on `self` in order to disambiguate the method call from the initialization of a new local variable. Within the instance methods of a class, `self` references the current object, the instance that called the instance method.
+
+```ruby
+class Cat
+  attr_accessor :name
+
+  def initialize(name)
+    self.name = name  # necessary use of `self`
+  end
+  
+  def what_am_i
+    puts self.inspect # outputs a detailed string representation of the current
+    									# object
+  end
+end
+
+felix = Cat.new("Felix")
+felix.what_am_i # <Cat:0x... @name="Felix">
+```
+
+The other common use for `self` is at the  class level, where `self` references the class itself. Here, defining a method on `self` results in a class method. Within a class method, `self` still references the class.
+
+```ruby
+class Cat
+  def self.what_am_i # defining a new class method on Cat
+    puts "I am the #{self} class"
+  end
+end
+
+Cat.what_am_i # "I am the Cat class"
+```
+
+In general, it is considered good style to use `self` only when necessary.
+
+---
+
+**What is inheritance, and why do we use it?**
+
+In Ruby, inheritance can take two forms.
+
+Class inheritance is when a class inherits behavior from another class. The class that inherits is called the subclass and the class from which it inherits is called the superclass. Any given class can only have one superclass but may have multiple subclasses. The superclass can in turn have its own superclass, and so on in a chain or hierarchy of inheritance. The relationship between a subclass and its superclass is an 'is-a' relationship, which is to say that the subclass 'is a' specialized type of the superclass type. The superclass defines general, highly-reusable behaviors, while its subclasses define more specific, fine-grained behaviors. A subclass can extend the superclass with additional behaviors as well as override and refine specific behaviors inherited from the superclass.
+
+Class inheritance allows us to model naturally hierarchical relationships between entities in the problem domain. This helps us in the design phase of the program, permitting us to think in abstractions that mirror the problem domain. By allowing us to extract common behaviors from subclasses to a shared superclass, class inheritance permits code reuse and polymorphism, leading to more maintainable code.
+
+```ruby
+class Animal
+  attr_reader :name
+
+  def initialize(n)
+    @name = n
+  end
+
+  def speak
+    puts "makes sound"
+  end
+end
+
+class Cat < Animal # Cat subclasses Animal
+  def speak
+    puts "meow!"
+  end
+end
+
+class Dog < Animal # Dog subclasses Animal
+  def speak
+    puts "woof!"
+  end
+  
+  def swim
+    puts "I'm swimming"
+  end
+end
+
+felix = Cat.new("Felix")
+puts felix.name # Felix
+felix.speak 		# meow!
+
+barny = Dog.new("Barny")
+puts barny.name # Barny
+barny.speak     # woof!
+```
+
+Here, the `Cat` and `Dog` classes are subclasses of the `Animal` superclass. They inherit the behavior of the `Animal` class, including the `initialize` constructor and the `name` method, as demonstrated. Both `Cat` and `Dog` offer a specialized implementation for the `speak` method; this is called method overriding. The `Dog` class extends the functionality of its superclass by defining a `swim` method. Since, for the purposes of example, this is a shared behavior of dogs but not of all animals generally, it makes sense for the `Dog` class to define this more specific behavior.
+
+Each class can only have one superclass but can have many subclasses. A superclass can in turn have its own superclass, forming a hierarchy or chain of inheritance.
+
+The other form inheritance can take in Ruby is through the use of mixin modules. A module can be defined to contain related behaviors that can then be mixed in to one or more classes by using the `Module#include` method. The class that mixes in a mixin module has access to the behaviors defined in the module, but is not considered a specialized type with respect to the module, since, unlike a class, a module cannot itself be instantiated. Instead, the relationship of the class to the module is a 'has-a' relationship, in that the class 'has a' behavior provided by the module. This is sometimes called 'interface inheritance'.
+
+For example,
+
+```ruby
+module Speakable
+  def speak
+    puts "Hello"
+  end
+  
+  def say(something)
+    puts something
+  end
+end
+
+class Student
+  include Speakable
+end
+
+class Professor
+  include Speakable
+end
+
+student = Student.new
+student.speak # "Hello"
+
+professor = Professor.new
+professor.speak # "Hello"
+```
+
+In this example, the inclusion of the `Speakable` module into two otherwise unrelated classes, `Student` and `Professor`, means that both class now have the ability to `speak`.
+
+Modules can be mixed in to two or more classes that do not need to be related by class inheritance. Yet, since Ruby is a single (class) inheritance language, mixin modules can be used in place of multiple (class) inheritance to supplement the behavior of related classes when common behaviors cannot be extracted to the superclass without providing them to subclasses that should not inherit them.
+
+In both cases, inheritance allows code reuse, increasing code maintainability. Inheritance means that multiple types become able to respond to a common interface, thus facilitating polymorphism.
+
+
+
+---
+
+**Give an example of how to use class inheritance**
+
+Class inheritance is the relationship between a subclass and its superclass, whereby the subclass inherits behavior from the superclass. This is an 'is a' relationship in that the subclass is a specialization of the superclass. This means that class inheritance should be used to model naturally hierarchical relationships in the problem domain.
+
+The subclass-superclass relationship is expressed by using the `<` operator after the name of the subclass, followed by the name of the superclass. We can extract common behaviors from the subclasses to their superclass and the subclasses will then inherit the behaviors.
+
+As an example, 
+
+```ruby
+class Boat
+  def cast_anchor
+    puts "casting anchor!"
+  end
+end
+
+class Schooner < Boat
+  def set_sail
+    puts "setting sail!"
+  end
+end
+
+class Speedboat < Boat
+  def start_engine
+    puts "starting the engine"
+  end
+end
+
+schooner = Schooner.new
+speedboat = Speedboat.new
+
+schooner.cast_anchor  # "casting anchor!"
+schooner.set_sail     # "setting sail!"
+
+speedboat.cast_anchor  # "casting anchor!"
+speedboat.start_engine # "starting the engine!"
+```
+
+Here, we extract the common `cast_anchor` instance method from the subclasses `Schooner` and `Speedboat` to their superclass `Boat`. Instances of `Schooner` and `Speedboat` both have access to this method through class inheritance, as demonstrated on lines 22 and 25. The `Schooner` class specializes its superclass by the addition of the `set_sail` instance method, while the `Speedboat` class add its own instance method `start_engine`. These additional behaviors are specific to each subclass.
+
+As well as simply adding behavior, subclasses can override methods inherited from their superclass. For example,
+
+```ruby
+class Animal
+  def speak
+    puts "*animal noises*"
+  end
+end
+
+class Cat < Animal
+  def speak
+    puts "meow!"
+  end
+end
+
+class Dog < Animal
+end
+
+cat = Cat.new
+cat.speak # meow!
+
+dog = Dog.new
+dog.speak # *animal noises*
+```
+
+Here, both `Cat` and `Dog` inherit the `speak` instance method from `Animal`. `Cat` overrides this on lines 8-10, however. This means that `Cat` instances have their own specialized implementation of this method, while `Dog` instances inherit the generic `speak` method from `Animal`. This is demonstrated on lines 17 and 20.
+
+
+
+**Give an example of overriding. When would you use it?**
+
+Method overriding allows us to specialize the behavior of a subclass in fine-grained ways. When a subclass inherits a method, we can override the inherited method with a different or more specialized implementation of a method of the same name. When an instance of the subclass has the method called on it, Ruby will search the subclass for instance methods first and find a method of that name, and so will not continue on the method lookup path to find the superclass method with that name. Methods inherited by mixing in a module can be overridden in the same way.
+
+It is common to override inherited methods if the subclass needs a more specialized implementation than its more general superclass. For example, if a `Document` class normally fetches the `text` of the document from a local file, we might want a `DatabaseDocument` subclass to inherit most of its behavior from `Document` but override the `text` method in order to fetch the document text from a database instead:
+
+```ruby
+class Document
+  # rest of class omitted ...
+  
+  def text
+    "text fetched from file"
+  end
+end
+
+class DatabaseDocument < Document
+  # rest of class omitted ...
+  
+  def text
+    "text fetched from database"
+  end
+end
+
+doc1 = Document.new
+doc2 = DatabaseDocument.new
+
+[doc1, doc2].each { |doc| puts doc.text }
+# "text fetched from file"
+# "text fetched from database"
+```
+
+
+
+It is important to be careful *not* to override methods inherited from the `Object` class (which most Ruby classes inherit from). These methods are so integral to the core functionality of Ruby programming that overriding them can have dire results for your application. However, certain methods inherited from `Object` are common and useful to override, an example being the `to_s` method.
+
+**Give an example of using the `super` method. When would we use it?**
+
+When a method overrides a method further up the inheritance hierarchy, the superclass method can still be called from within the subclass method by the use of the keyword `super`.
+
+```ruby
+class Pet
+  def greeting
+    "Hi"
+  end
+end
+
+class Cat < Pet
+  def greeting
+    super + " from a cat"
+  end
+end
+
+kitty = Cat.new
+puts kitty.greeting # "Hi from a cat"
+```
+
+This allows us to reuse existing code, and is useful for any situation in which we simply want to extend the behavior of the inherited method rather than change the existing implementation.
+
+**Give an example of using the `super` method with an argument**
+
+When a method overrides a method further up the inheritance hierarchy, the superclass method can still be called from within the overriding method by the use the `super` keyword. Called without arguments, `super` calls the next method further up the method lookup path passing all arguments through to the superclass method. If `super()` is called with empty parentheses, no arguments are passed. Ordinary method call syntax can be used to pass specific arguments to the superclass method, e.g. `super(first_argument, second_argument)`.
+
+Especially used with `super`, overriding `initialize` is very common in Ruby. This allows us to `initialize` the subclass instances with greater number of instance variables, allowing for a more fine-grained, specialized state for the subclass objects than for the more general superclass.
+
+```ruby
+class Pet
+  attr_accessor :name
+  
+  def initialize(name)
+    @name = name
+  end
+end
+
+class Dog < Pet
+  attr_accessor :color
+
+  def initialize(name, color)
+    super(name)
+    @color = color
+  end
+end
+
+barny = Dog.new("Barny", "brown")
+puts barny.inspect # <Dog:0x... @name="Barny", @color="brown">
+```
+
+Here, we have a generic `Pet` superclass whose `initialize` constructor simply takes a `name` for the `Pet` instance and uses it to initialize a `@name` instance variable on line 5. The `Dog` class, which subclasses `Pet`, defines an `initialize` method that overrides the superclass method but also makes use of it, passing through its own `name` argument to the superclass `initialize` method via `super(name)` on line 13. After this, on line 14, the subclass `initialize` constructor initializes the `@color` instance variable to the second argument, `color`. Thus we can see, on line 19, that a newly-created `Dog` instance has both `name` and `color` attributes. `Dog` provides setter and getter methods for the additional attribute through the call to `Module#attr_accessor` on line 10.
+
+
+
+---
+
+A way to think about Duck Typing just occurred to me. When you inherit methods, an object has access to that method through the method lookup path. When you override methods, you place a new method closer in the lookup path. When you mixin a module, you insert the module into the method lookup path.
+
+With duck typing, none of this takes place. Instead, you have two classes which do not receive a method from the same source in their method lookup paths. Instead, they just defined a method with the same name in two completely separate inheritance chains. So there is no location in the method lookup path connecting them at all. So it's better to focus on understanding it from that perspective than it is to contrast duck typing mentally with static typing or thinking about late binding etc. It is an emergent situation that is more than the sum of its parts, in that we are thinking about it as a situational possibility or pattern.
+
+So class inheritance and mixins are both ways to implement polymorphism through manipulating the method lookup path. Therefore, even in Ruby, there is a concrete difference between this situation and duck typing.
+
+Duck typing just means that an object exposes the necessary interface and behavior for a given task, or can be grouped with (categorized with) other objects based on that common interface (e.g., objects that can be passed to a particular function which calls a particular method on them, an array of such objects that will be passed to a function, etc)
+
+```ruby
+# class inheritance
+class Guitar
+  def strum
+    "strumming chord"
+  end
+end
+
+class ElectricGuitar < Guitar # has `strum` because it is in 
+  														# method lookup path
+end
+
+class AccousticGuitar < Guitar
+end
+
+guitars = []
+10.times do |counter|
+  guitars << counter.even? ? ElectricGuitar.new : AccousticGuitar.new
+end
+guitars.each { |guitar| guitar.strum }
+# each element is-a 'guitar'
+
+
+# interface inheritance / mixin modules
+module Strummable
+  def strum
+    "strumming"
+  end
+end
+
+class Harp
+  include Strummable # has `strum` because it is in method lookup path
+end
+
+class Guitar
+  include Strummable
+end
+
+chordophones = []
+10.times do |counter|
+  chordophones << counter.even? ? Guitar.new : Harp.new
+end
+chordophones.each { |chordophones| chordophones.strum }
+# each chordophone has-an ability to be strummed
+
+# duck typing
+class Harp
+  def strum
+    "ethereal arpeggios"
+  end
+end
+
+class Ukelele
+  def strum
+    "plinky chord"
+  end
+end
+
+strummables = []
+10.times do |counter|
+  strummables << counter.even? ? Harp.new : Ukelele.new
+end
+strummables.each { |strummable| strummable.strum }
+# each strummable exposes the necessary behavior to be grouped in strummables
+# for the task of strumming
+
+```
+
+
+
+---
+
+**When creating a hierarchical structure, under what circumstance would a module be useful?**
+
+Ruby is a single inheritance OOP language, which means that classes can only inherit from a single superclass. When creating a class hierarchy, there may be functionality which should be shared by two or more classes but, because of the limit of one superclass per class, there is no viable superclass to extract the behavior to without sharing it with subclasses that should not have access to it. However, mixin modules can be used in place of multiple inheritance to achieve code reuse.
+
+For instance, if we had the following class hierarchy,
+
+```ruby
+class Auto
+end
+
+class Truck < Auto
+end
+
+class Car < Auto
+end
+
+class Sedan < Car
+end
+
+class Sportscar < Car
+end
+```
+
+If we wanted to add functionality that related to the two-seater vehicles, `Truck` and `Sportscar`, there is no viable superclass to extract the functionality to. Defining the methods in `Auto` would share them with all of its subclasses, including `Sedan`. With pure class inheritance, we would have to repeat the definitions of the two-seater methods in both of these subclasses. However, mixin modules provide a way to write the method definitions once and then share this behavior with whichever classes we want by mixing in the module with the `Module#include` method:
+
+```ruby
+module TwoSeatable
+  def number_of_seats
+    2
+  end
+end
+
+class Auto
+end
+
+
+class Truck < Auto
+  include TwoSeatable
+end
+
+class Car < Auto
+end
+
+class Sedan < Car
+end
+
+class Sportscar < Car
+  include TwoSeatable
+end
+
+car = Car.new
+truck = Truck.new
+sportscar = Sportscar.new
+
+puts truck.number_of_seats # 2
+puts sportscar.number_of_seats # 2
+```
+
+Here, the `number_of_seats` instance method, defined in the `TwoSeatable` module is mixed into the `Truck` class (line 12) and the `Sportscar` class (line 22). 
+
+Using mixin modules to group common behaviors allows us to reuse code effectively in situations where Ruby's single inheritance would make it extremely difficult using class inheritance alone. Reusing code leads to more maintainable code and reduces the potential for errors.
+
+**What is interface inheritance, and under what circumstance would it be useful in comparison to class inheritance?**
+
+When we define behavior in a module and mix that module in to a class using the `Module#include` method, the class gains access to those behaviors; this is sometimes called 'interface inheritance'.
+
+Class inheritance means that one type inherits the behaviors of another type. The resulting type specializes the type of the superclass. The relationship is an 'is a' relationship, in that the subclass 'is a' specialized type of the superclass type. For instance,
+
+```ruby
+class Reptile
+end
+
+class Lizard < Reptile
+end
+```
+
+Here, it makes sense that `Lizard` subclasses `Reptile` because a lizard *is a* specific type of reptile.
+
+With interface inheritance, the class doesn't inherit from another type. Rather, it inherits the interface provided by the mixin module. The class that mixes in the module is not a specialization of the type of the module. A module cannot be instantiated. The relationship between the class and the module can be described as a 'has a ' relationship, in that the class 'has an' ability provided by the module. Conventionally, mixin modules are often named with adjectives describing the ability they impart to the classes that mix them in, often ending in the suffix '-able'. For instance,
+
+```ruby
+class Climbable
+  def climb
+    puts "I'm climbing"
+  end
+end
+
+class Monkey
+  include Climbable
+end
+
+class MountainGoat
+  include Climbable
+end
+
+monkey = Monkey.new
+goat = MountainGoat.new
+
+monkey.climb # "I'm climbing"
+goat.climb # "I'm climbing"
+```
+
+Here, two classes of animal, `Monkey` and `MountainGoat`, which do not share a class inheritance hierarchy, both possess an ability to `climb` by mixing in the `Climbable` module.
+
+If there is an 'is a' relationship, class inheritance expresses this relationship better. If there is a 'has a' relationship, interface inheritance expresses that relationship better.
+
+Whereas a class can only have one superclass, it can `include` an arbitrary number of mixin modules. This means interface inheritance can be used to supplement the behaviors inherited from the superclass. This is Ruby's solution to the problems that multiple inheritance might solve in other languages. Interface inheritance can thus be useful when behaviors needed by two or more subclasses cannot be extracted to their common superclass without providing the behaviors to classes that should not have access to them.
+
+Since a module cannot be instantiated, a module cannot take the place of a superclass when the superclass needs to be able to instantiate objects itself.
+
+**How is the method lookup path affected by module mixins and class inheritance?**
+
+When a method is invoked on an object, Ruby searches the method lookup path for objects of that class. Ruby searches the path for a method with the name used in the invocation.
+
+The method lookup path begins with the class of the object. If the method name is not found, Ruby then searches modules mixed in by the `Module#include` method in the reverse order of the calls to `include`. If the method name is still not found, Ruby moves on to the superclass. This process repeats until the name is found, or a `NoMethodError` is raised to signify that there is no method of that name available to that object.
+
+The `Module#ancestors` method can be called on a class to return an array of classes and mixin modules representing the method lookup path for objects of that class. For instance,
+
+```ruby
+module Walkable
+end
+
+module Swimmable
+end
+
+class Animal
+  def speak
+    puts "hello"
+  end
+end
+
+class Dog < Animal
+  include Walkable
+  include Swimmable
+end
+
+Dog.ancestors # [Dog, Swimmable, Walkable, Animal, Object, Kernel, BasicObject]
+barny = Dog.new
+barny.speak # "hello"
+```
+
+On lines 1-13, we create a hierarchy of two classes `Animal` and its subclass `Dog`, and two mixin modules, `Walkable` and `Climbable`, which are mixed in to `Dog`. The call to `Dog.ancestors` on line 15 demonstrates the method lookup path for objects of the `Dog` class. First, the `Dog` class itself is searched. Then the `Swimmable` module is searched before the other module because the call to `include` for `Swimmable` was the last `include` method call. Next the `Walkable` module is searched, and then the superclass `Animal` is searched. Since custom classes that do not explicitly inherit from another class implicitly inherit from `Object`, this is the next class searched. `Object` mixes in the `Kernel` module, and inherits from `BasicObject`.
+
+On line 20, the `speak` method is called on an object of the `Dog` class. Ruby first searches `Dog` and does not find the method. Ruby then searches `Swimmable` and then `Walkable` and does not find a method called `speak`. Ruby then searches the `Animal` class and finds a `speak` method, so `Animal#speak` is the method executed for this invocation.
+
+Mixed in modules are inserted in the method lookup path between the class and its superclass in the reverse order of their `include` calls. This means that in the rare case of two or more mixin modules containing methods with the same name, the method in the module included last will be chosen. The superclass is searched after the class and its mixin modules.
+
+**What is namespacing?**
+
+Namespacing means grouping language elements under a name that serves to qualify the names of those elements. In Ruby, this is achieved with modules.
