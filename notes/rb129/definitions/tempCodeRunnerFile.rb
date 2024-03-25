@@ -1,3 +1,6 @@
-  # def +(other)
-  #   WrappedNumber.new(number + other.number)
-  # end
+
+# class Cow
+#   def speak
+#     super + "mooooooo!"
+#   end
+# end
