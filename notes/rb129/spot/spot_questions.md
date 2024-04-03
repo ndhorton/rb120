@@ -2981,21 +2981,1477 @@ The `eql?` method is inherited from `Object`. The `eql?` method generally determ
 
 ---
 
+**How do you determine if two variables actually point to the same object?**
+
+The `BasicObject#equal?` method is inherited by all classes in Ruby. It is used to test for equivalence based on object identity. This means that `equal?` returns `true` only if the calling object and the argument are actually the same object. Therefore it is used to test whether the variable it is called on and the variable passed as argument point to the same object.
+
+Another way to test if two variables point to the same object would be to call `Object#object_id` on both variables and compare the return values via the `==` method.
+
+For instance,
+
+```ruby 
+var1 = Object.new
+var2 = var1
+var3 = Object.new
+
+puts var1.equal?(var2) # true
+puts var1.equal?(var3) # false
+
+puts var1.object_id == var2.object_id # true
+puts var1.object_id == var3.object_id # false
+```
+
+**What is `==` in Ruby? How does `==` know what value to use for comparison?**
+
+In Ruby, `==` is the name of a method rather than an operator. The `==` method is a predicate method, and tests for equivalence by comparing the object values of the caller and argument.
+
+The default `==` method is defined in `BasicObject`, which every class in Ruby inherits from. However, the `==` method is overridden by many of the core and standard library classes, and is commonly overridden by custom classes. The object value that `BasicObject#==` tests for is the object id, which is already covered by the `BasicObject#equal?` method, so `==` is generally overridden if it is to be called on objects of a custom class.
+
+As for any other method, which `==` method is called in any given expression will be determined by the class of the calling object. The value that is used for comparison will be the one tested for in the body of the definition of the `==` method for that class.
+
+For example,
+
+```ruby
+class Cat
+  attr_reader :name
+  
+  def initialize(name)
+    @name = name
+  end
+  
+  def ==(other)
+    name == other.name
+  end
+end
+
+cat1 = Cat.new("Fluffy")
+cat2 = Cat.new("Fluffy")
+cat3 = Cat.new("Tom")
+
+puts cat1 == cat2 # true
+puts cat1 == cat3 # false
+```
+
+Here, we define a `Cat` class (lines 1-11) with a custom `==` method (lines 8-10). The body of the `Cat#==` method tests for the equivalence of the `name` attribute, so this is the value that `Cat#==` uses to determine equivalence. Since the `name` attribute is intended to be a String, the work of the method is handled by `String#==`. We can see from the examples of two `Cat` objects with identical values for their `name` attribute (instantiated on lines 13-14) and one `Cat` object with a different `name` value (line 15) that the method works as expected (lines 17-18). The two `Cat` objects with the same name return `true` (line 17) when compared with `==`, and when we compare one of these objects to a `Cat` with a different `name`, the return value is `false` (line 18).
+
+---
+
+ **Is it possible to compare two objects of different classes?**
+
+We can always compare objects of different classes using Ruby's equivalence methods, though the return value will often be `false`. Whether two objects of different classes can be found to be equivalent depends entirely on the implementation of the method used.
+
+Some of Ruby's built-in classes, particularly `Numeric` classes like `Integer` and `Float`, define `==` methods that allow the mathematical value of an `Integer` to be equivalent to that of a `Float`, with the necessary conversions handled implicitly by the `==` method called.
+
+For example,
+
+```ruby
+puts 42 == 42.0 # true
+```
+
+The `===` method often compares objects of different classes, since it checks whether the argument object can be considered part of the group represented by the calling object.
+
+```ruby
+String === "string object" # true, the String object is of the String class group
+(1..10) === 5 # true, the Integer is a member of the Range object's group
+```
+
+By contrast, the class of the objects compared is usually a factor in whether `eql?` finds objects to be equivalent. The `equal?` method tests for equivalence based on object identity, so not only will the objects compared need to be the same class for `equal?` to return `true`, they must be the same object.
+
+---
+
+**What do you get 'for free' when you define a `==` method?**
+
+When a custom class defines a `==` method, the equivalent but opposite `!=` method is generated automatically. For instance,
+
+```ruby
+class Cat
+  attr_reader :name
+  
+  def initialize(name)
+    @name = name
+  end
+  
+  def ==(other)
+    name == other.name
+  end
+end
+
+cat1 = Cat.new("Fluffy")
+cat2 = Cat.new("Fluffy")
+cat3 = Cat.new("Iota")
+
+p cat1 == cat2 # true
+p cat1 == cat3 # false
+
+p cat1 != cat2 # false
+p cat1 != cat3 # true
+```
+
+---
+
+What will the code above return and why?
+
+```ruby
+arr1 = [1, 2, 3]
+arr2 = [1, 2, 3]
+arr1.object_id == arr2.object_id      # => ??
+
+sym1 = :something
+sym2 = :something
+sym1.object_id == sym2.object_id      # => ??
+
+int1 = 5
+int2 = 5
+int1.object_id == int2.object_id      # => ??
+```
+
+On lines 1-2, we initialize two variables `arr1` and `arr2` to two different Array objects with the same value `[1, 2, 3]`.
+
+On line 3, we call `object_id` on `arr1` and then call the `Integer#==` method on the return value, with the return value of calling `object_id` on `arr2` passed as argument. This will return `false`, since `arr1` points to a different object than `arr2` and so the object ids will be different.
+
+On lines 5-6, we initialize two local variables `sym1` and `sym2` to the Symbol object `:something`. Although we use Symbol literal notation for both initializations, Symbols are one of the few special cases in Ruby where any two Symbols with the same value are exactly the same object.
+
+So when on line 7 we call `object_id` on `sym1` and compare this to the return value of calling `object_id` on `sym2` using the `==` method, the return value will be `true`. This is because there can be only a single Symbol object with the value `:something`, so both variables point to the same object.
+
+On lines 9-10, we initialize two variables, `int1` and `int2` to the Integer object `5`. Like Symbols, Integer objects in Ruby are a special case of immutable object where there can be only one Integer object with a given value. So when we compare the object ids of `int1` and `int2` on line 11, using the `Integer#==` method, the return value will be `true`, since both variables point to the same Integer object `5`.
+
+7m40s
+
+---
+
+**What is the `===` method?**
+
+The `===` method is most commonly used by `case` statements. The general meaning of the `===` method in Ruby is to check whether the object passed as argument is a member of the group represented by the calling object. The nature of the 'group' depends on the class of the caller.
+
+For instance,
+
+```ruby
+String === "string object" # true
+String === 42 # false
+
+(1..50) === 25 # true
+(1..50) === 75 # false
+(1..50) === "string object" # false
+```
+
+Sometimes the group might have a single member:
+
+```ruby
+25 === 25 # true
+25 === 75 # false
+```
+
+The `Object#===` method is the default implementation of `===` inherited by most custom classes. It is less commonly overridden than `==`, since its use is mostly confined to implicit calls in `case` statements.
+
+---
+
+**What is the `eql?` method?**
+
+The default implementation of `eql?` is `Object#eql?`, which is inherited by most custom classes. The default `eql?` checks for equivalence based on object value and the class of the objects compared. The main use of `eql?` is its implicit use by the `Hash` class to check for equality among members. It is not very commonly overridden in custom classes.
+
+---
+
+**What are the scoping rules for instance variables?**
+
+Instance variables have names that begin with `@` and are scoped at the object level. This means that they can only be directly accessed by an object's instance methods. They are used to track the individual state of an object. An object's instance variables are individual to that object, and are distinct from the instance variables of every other object of the class. **We use an instance variable to separate the state of individual objects of a class**. For instance,
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name       # each Cat will have its own `name` tracked by `@name`
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+tom = Cat.new("Tom")
+
+puts fluffy.inspect # <Cat:0x... @name="Fluffy">
+puts tom.inspect # <Cat:0x... @name="Tom">
+```
+
+Here, we define a `Cat` class over lines 1-5, and then instantiate two `Cat` objects on lines 7-8. The `Cat#initialize` method (lines 2-3) sets an instance variable called `@name` to the String passed through from the `new` class method. We can see from the `puts` output of the return value of calling `inspect` on the two `Cat` objects (lines 10-11) that each `Cat` object has its own individual `@name` instance variable referencing a different String object.
+
+Instance variables can only be initialized in an object by the object's instance methods. All of an object's instance variables are accessible by any of its instance methods. 
+
+Instance variables only come into existence when initialized by a call to one of the object's instance methods (though this includes the `initialize` constructor, called implicitly when the object is instantiated by the `new` class method). Instance variables persist for the lifetime of the object.
+
+Referencing an uninitialized instance variable will simply evaluate to `nil` without an exception being raised (and without that instance variable being initialized to `nil`). 
+
+Instance variables are not inherited. Instance methods are inherited, and those methods may initialize instance variables in an object of the subclass, yet those instance variables will be individual to that object. In this way, an inherited instance method may propagate a predetermined name for a potential instance variable to instances of a subclass, but the instance variable only comes into being in an object of the subclass if that method is called on an object of the subclass. Once initialized, the instance variable is scoped at the object level like any other instance variable. Thus, instance variables are not directly inherited by subclasses.
+
+Mixin modules behave similarly. The methods acquired by a class that mixes in a module may initialize instance variables in objects of that class if they are called on an object of that class.
+
+---
+
+What is the return value, and why?
+
+```ruby
+class Person
+  def get_name
+    @name                     # the @name instance variable is not initialized anywhere
+  end
+end
+
+bob = Person.new
+bob.get_name                  # => ??
+```
+
+We define a `Person` class over lines 1-5 with only one instance method `get_name`, defined with no parameters on lines 2-4. The only expression in the `get_name` method is the instance variable `@name`.
+
+On line 7, we instantiate a new `Person` object and use it to initialize local variable `bob`. On line 8, we call `get_name` on the `bob` object. Since the `@name` instance variable has not been initialized, the reference to it on line 3 in the `get_name` definition evaluates to `nil`, and this forms the return value.
+
+This happens because, unlike for local variables, referencing an uninitialized instance variable always returns `nil` without raising an exception (and without initializing the variable).
+
+4m19s
+
+---
+
+**What are the scoping rules for class variables? What are the two main behaviors of class variables?**
+
+Class variables have names that begin with `@@` and are scoped at the class level (though their scope can be affected by inheritance).
+
+Once initialized, a class variable is accessible throughout the class, within instance methods, within class methods, and within the class outside of any method definition. This means that the same class variable is shared between the class and all of its instances. Class variables are the only variables (ignoring globals) that can share state between objects.
+
+```ruby
+class Cat
+  @@total_cats = 0    # outside of methods
+  
+  def self.total_cats # class method
+    @@total_cats
+  end
+  
+  def initialize      # instance method
+    @@total_cats += 1
+  end
+  
+  def total_cats      # instance method
+    @@total_cats
+  end
+end
+
+puts Cat.total_cats # 0
+
+cats = []
+10.times { cats << Cat.new }
+
+puts Cat.total_cats # 10 (class method returns reference to class variable)
+cats[0].total_cats  # 10 (instance method returns reference to class variable)
+cats[1].total_cats  # 10
+```
+
+ A reference to an uninitialized class variable will raise a `NameError` exception.
+
+Class variables are not inherited. Rather, if a class has a class variable, every subclass and their descendant classes will share that same variable.
+
+```ruby
+class Animal
+  @@total_animals = 0
+  
+  def self.total_animals
+    @@total_animals
+  end
+  
+  def initialize
+    @@total_animals += 1
+  end
+  
+  def total_animals
+    @@total_animals
+  end
+end
+
+class Cat < Animal
+end
+
+puts Animal.total_animals # 0
+
+animal = Animal.new
+puts Animal.total_animals # 1
+puts animal.total_animals # 1
+
+cat = Cat.new
+puts Cat.total_animals # 2
+puts cat.total_animals # 2
+
+puts Animal.total_animals # 2
+```
+
+Subclassing from a class that uses class variables thus expands the scope of the class variables to include the subclass and all its instances. This is true for all subclasses of the original class, and their descendant classes too. This expansive scope can be extremely problematic.
+
+```ruby
+class Guitar
+  @@strings = 6
+  
+  def self.strings
+    @@strings
+  end
+end
+
+class Bass < Guitar
+  @@strings = 4
+end
+
+puts Guitar.strings # 4
+```
+
+Here, we define a `Guitar` class on lines 1-7, with a class variable `@@strings` initialized on line 2 to the value `6`. Next, we define a `Bass` class that subclasses `Guitar`, with what we intend to be its own `@@strings` variable with a different value, `4`. However, when on line 13 we call the class method `Guitar::strings` to return a reference to the `@@strings` class variable, its value is now `4`. This is because the `@@strings` class variable that is set on line 10 in the `Bass` class is exactly the same variable initialized on line 2. The evaluation of the `Bass` class definition changed the variable for both classes, because class variables are shared between a class and all its descendant classes.
+
+Due to issues like this, many Rubyists advise against the use of class variables in a class that has subclasses. Others advise against using class variables at all.
+
+There are, then, two main behaviors of class variables with respect to scope. The first is that the class and all objects of the class share one copy of a class variable. The second is that class methods can access a class variable provided the class variable has been initialized prior to calling the method.
 
 
 
+---
 
+**What are the scoping rules for constant variables?**
 
+Constant variables are usually called constants, since they are not intended to be reassigned once initialized. Reassignment of a constant will generate a warning from the Ruby interpreter, but will not raise an exception. Constant names begin with a capital letter.
 
+Constants have lexical scope. Lexical scope means that where the constant is defined within the source code determines where it is accessible. When resolving a reference to a constant, Ruby searches the surrounding lexical structure of the point in the source code where the reference occurs. This lexical structure will be the lexically-enclosing class or module in which the reference occurs. If no definition is found in the immediate lexical structure, Ruby will widen the search to the next enclosing lexical structure if there is one. The lexical search will expand outwards through the nested lexical structures up to but not including the top-level. For instance,
 
+```ruby
+module Guitar
+  STRINGS = 6
+  
+  class Accoustic
+    def number_of_strings
+      STRINGS
+    end
+  end
+end
 
+guitar = Guitar::Accoustic.new
+puts guitar.number_of_strings # 6
+```
 
+Here, the reference to constant `STRINGS` on line 6, within the `Guitar::Accoustic#number_of_strings` method, occurs surrounded in the source code by the `Guitar::Accoustic` class definition (lines 4-8). Ruby searches this class for a `STRINGS` definition but does not find it. The next lexically enclosing structure is the `Guitar` module definition (lines 1-9). Ruby searches this structure for a `STRINGS` definition and finds it on line 2, where it references `6`. Therefore, when called on an instance of the `Guitar::Accoustic` class, on line 12, the `number_of_strings` method returns `6`.
 
+If Ruby finishes the lexical search and still cannot find a definition for the constant, Ruby will search the inheritance hierarchy beginning with the lexically-enclosing structure where the constant reference is made in the source code, and if the definition still cannot be found it will finally search top-level.
 
+For instance,
 
+```ruby
+class Guitar
+  STRINGS = 6
+end
 
+class Accoustic < Guitar
+  def number_of_strings
+    STRINGS
+  end
+end
 
+accoustic = Accoustic.new
+puts accoustic.number_of_strings # 6
+```
 
+Here we define a `Guitar` class (lines 1-3) which initializes the constant `STRINGS` on line 2. We define a subclass `Accoustic` on lines 5-9, which has one instance method `number_of_strings`. The sole expression in the body of this method is a reference to a `STRINGS` constant. Ruby first performs the lexical search, which in this case consists of the single lexically-enclosing structure, the `Accoustic` class. When the constant definition cannot be found, Ruby searches the inheritance hierarchy of the lexically-enclosing structure, the `Accoustic` class. Ruby searches the superclass, `Guitar` , and finds the definition, `6`. So when `number_of_strings` is called on an instance of `Accoustic` on line 12. the method successfully returns `6`.
+
+If we wish to reference a constant from a class or module that does not lexically enclose the point of reference, we can use the namespace resolution operator `::` to qualify the name of the constant with the name of the class or module where it is defined.
+
+```ruby
+class Guitar
+  STRINGS = 6
+end
+
+puts Guitar::STRINGS # 6
+```
+
+It is important to consider how the lexical scope of constants can interact with method lookup with respect to inheritance. For instance,
+
+```ruby
+class Guitar
+  STRINGS = 6
+
+  def number_of_strings
+    STRINGS
+  end
+end
+
+class Bass < Guitar
+  STRINGS = 4
+end
+
+bass = Bass.new
+puts bass.number_of_strings # 6
+```
+
+Here we define a superclass `Guitar` on lines 1-7, which contains definitions for the constant `STRINGS` and the instance method `number_of_strings`. Then we define a subclass, `Bass`, on lines 9-11, which contains its own definition of `STRINGS`. The `number_of_strings` method is called on an instance of `Bass` on line 12. The `number_of_strings` method definition body contains as its only expression a reference to the constant `STRINGS`. Ruby searches the structure that lexically encloses the reference, which is the `Guitar` class, not the `Bass` class. Consequently, it is the definition in the `Guitar` class that is returned, even though the method was called on an instance of `Bass` and `Bass` defines its own `STRINGS` constant. 
+
+If we wish to be able to reference the `STRINGS` constant of the calling object's class, `Bass`, we can combine the namespace operator and a dynamic reference to the caller's class:
+
+```ruby
+class Guitar
+  STRINGS = 6
+
+  def number_of_strings
+    self.class::STRINGS
+  end
+end
+
+class Bass < Guitar
+  STRINGS = 4
+end
+
+bass = Bass.new
+puts bass.number_of_strings # 4
+guitar = Guitar.new
+puts guitar.number_of_strings # 6
+```
+
+Line 5 now uses the keyword `self` in order to reference the calling object, and calls the `Kernel#class` method on `self` in order to dynamically reference the appropriate class. The namespace operator and the class prefix qualify the constant reference so that the correct `STRINGS` definition can be found. This is why the call to `number_of_strings` on a `Bass` object now returns the correct constant definition, `4` (line 14). We can see on line 16 that calling `number_of_strings` on a `Guitar` object also returns the appropriate constant definition, `6`.
+
+The full lookup path for a constant is therefore the lexical scope of the reference, then the inheritance chain of the lexically-enclosing structure of the reference, then the top-level.
+
+---
+
+**How does subclassing affect instance variables?**
+
+Instance variables are not directly inherited by subclasses. Instance *methods* are inherited by subclasses. If an instance method inherited from the superclass initializes an instance variable in the calling object, and that instance method is called on an object of the subclass, then an instance variable will be initialized in the subclass object by the method inherited from the superclass. Once the instance variable is initialized in an object of the subclass, it is accessible to all instance methods available to the object, including those defined in the subclass.
+
+For instance,
+
+```ruby
+class Animal
+  def name=(name)
+    @name = name
+  end
+end
+
+class Cat < Animal
+  def name
+    @name
+  end
+end
+
+cat = Cat.new
+puts cat.inspect # <Cat:0x...>
+cat.name = "Fluffy"
+puts cat.inspect # <Cat:0x... @name="Fluffy">
+puts cat.name
+```
+
+Here we have a superclass `Animal` (defined on lines 1-5), which defines a setter method `name=` (lines 2-4), and a subclass `Cat` (7-11), which defines a getter method `name` (lines 8-10). On line 14, we call the `Object#inspect` method on a `Cat` object and pass the return value to `Kernel#puts`. The output shows that no instance variables have been initialized in the object. On line 15, we call the inherited instance method `Animal#name=` on the `Cat` object with the string `"Fluffy"` passed as argument. The output on line 16 shows that we have now initialized a `@name` instance variable in the `Cat` object by calling a method defined in the superclass. On line 17, we call the `Cat#name` method on the `Cat` object, and it returns the value of `@name`, which is still `"Fluffy"`. This demonstrates that instance variables initialized by a superclass method in a subclass object behave like any other instance variable.
+
+---
+
+What will this return, and why?
+
+```ruby
+class Animal
+  def initialize(name)
+    @name = name
+  end
+end
+
+class Dog < Animal
+  def initialize(name); end
+
+  def dog_name
+    "bark! bark! #{@name} bark! bark!"    
+  end
+end
+
+teddy = Dog.new("Teddy")
+puts teddy.dog_name                       # => ??
+```
+
+Here we define an `Animal` superclass (lines 1-5) and a `Dog` subclass (7-13). The only method defined in `Animal` is the `initialize` constructor method with one parameter `name`, which is used to initialize the instance variable `@name`.
+
+The `Dog` class defines a `dog_name` instance method, which returns a string with the instance variable `@name` interpolated into it: `"bark! bark! #{@name} bark! bark!" `. 
+
+However, `Dog` overrides the superclass `initialize` method with its own implementation which takes a `name` parameter but fails to set the `@name` instance variable (line 8).
+
+Thus when `dog_name` is called on an instance of `Dog`, on line 16, and the return value is passed to to `Kernel#puts`, the output will be `"bark! bark!  bark! bark!"`. This is because an uninitialized instance variable, `@name` in this case, will always return `nil` and when the string interpolation calls `to_s` on `nil`, it will return an empty string for interpolation.
+
+5m48s.
+
+---
+
+How do you get this code to return “swimming”? What does this demonstrate about instance variables?
+
+```ruby
+module Swim
+  def enable_swimming
+    @can_swim = true
+  end
+end
+
+class Dog
+  include Swim
+
+  def swim
+    "swimming!" if @can_swim
+  end
+end
+
+teddy = Dog.new
+teddy.swim                                  
+```
+
+We define a `Swim` module over lines 1-5 and a `Dog` class over lines 7-13. `Dog` mixes in the `Swim` module with a call to `Module#include` on line 8. On line 15, we initialize local variable `teddy` to a new `Dog` object. On line 16, we call the `Dog#swim` method on `teddy`.
+
+The `Dog#swim` method is defined on lines 10-12. An `if` modifier uses a reference to the instance variable `@can_swim` as its condition. If `@can_swim` is set to reference an object that evaluates as truthy in a boolean context, the method returns the string `"swimming!"`. Otherwise, since there is no other expression in the definition body, the method returns `nil`.
+
+Since `@can_swim` is not set, a reference to an uninitialized instance variable returns `nil` and so `Dog#swim` returns `nil`.
+
+In order to make the `swim` method return `"swimming!"`, we could call the `enable_swimming` instance method defined in the `Swim` module, which `Dog` has access to. The `enable_swimming` method sets `@can_swim` to `true`, which will thus satisfy the `if` modifier in `swim`.
+
+If an instance method defined in a mixin module is called on an object whose class mixes in that module, any instance variables the method initializes will be accessible to all instance methods of the object, just like an instance variable initialized by one of the object's class's instance methods. However, if no instance variables have yet been initialized by an invocation one of the methods available to an object (whether from its class or mixin modules or class inheritance hierarchy) then no instance variables will yet exist in the object. In this sense, instance variables themselves are not inherited from mixins or superclasses, only methods are directly inherited.
+
+A instance method defined in a mixin module may initialize instance variables in objects of the class that mixes in the module, but not until that method is actually called on an object of the class. In this sense, instance methods are inherited, but instance variables are not.
+
+11m42s
+
+**Are class variables accessible to sub-classes?**
+
+Any class variables that are initialized in a superclass will be accessible to its sub-classes, and all of its descendant classes. This means that a class variable initialized in a superclass is shared by the class, its objects, all of its descendant classes, and all of their objects. There is only one copy of the variable shared between many objects and classes, all of which can modify it.
+
+For example,
+
+```ruby
+class Shape
+  @@total_shapes = 0
+  
+  def self.total_shapes
+    @@total_shapes
+  end
+  
+  def initialize
+    @@total_shapes += 1
+  end
+end
+
+class Square
+  def total_shapes
+    @@total_shapes
+  end
+end
+
+puts Shape.total_shapes # 0
+square = Square.new
+puts square.total_shapes # 1
+puts Shape.total_shapes # 1
+```
+
+Here, we define a `Shape` class on lines 1-11, with a class variable `@@total_shapes` initialized to `0`. We define a class method `Shape::total_shapes` to return the reference of `@@total_shapes`, on lines 4-6. We also define an `initialize` constructor instance method, which increments `@@total_shapes` whenever a `Shape` is instantiated.
+
+The `Square` class subclasses `Shape` and inherits all of its methods without overriding them. It does not inherit but rather shares the class variable `@@shapes` with its superclass. It also defines a `Square#total_shapes` instance method which returns the reference of `@@total_shapes`.
+
+So when we instantiate a single `Square` object, `square`, and then call `Square#total_shapes` on it, on line 21, we can see from the return value that the class variable is the same as that in `Shape`, when we call `Shape::total_shapes` on line 22. This demonstrates that class variables are accessible to subclasses and their objects.
+
+---
+
+**Why is it recommended to avoid the use of class variables when working with inheritance?**
+
+A class variable is accessible to the class and all of its objects. It is the only kind of variable (except globals) that can share state between objects. When a class that initializes a class variable has subclasses, that class variable will also be shared between the superclass and all of its descendant classes, and all of their objects.
+
+This means that a single class variable can be modified by a potentially great number of objects and classes. This behavior can be hard to reason about. For instance,
+
+```ruby
+class Guitar
+  @@strings = 6
+
+  def self.strings
+    @@strings
+  end
+end
+
+class Bass < Guitar
+  @@strings = 4
+end
+
+puts Bass.strings # 4
+puts Guitar.strings # 4
+```
+
+The `Guitar` superclass, defined on lines 1-7, initializes a class variable `@@strings`, on line 2, to the integer `6`. `Guitar` defines a class method `Guitar::strings` on lines 4-5, which returns the reference of `@@strings`.
+
+We might intend the `Bass` subclass, on lines 9-11, to initialize its own `@@strings` class variable to `4` on line 10. But `Bass` does not inherit its own individual `@@strings` variable; in fact this is a reassignment of the class variable `Bass` shares with its superclass `Guitar`. Thus when `Guitar::strings` is called on `Guitar`, on line 14, the return value is not the expected `6` but rather the `4` that the `Bass` class set the variable to on line 10.
+
+This greatly expansive scope is often considered dangerous because it adds a great deal of complexity to the way we normally think about class inheritance, and many Rubyists advise against using class variables in a class that has subclasses. Some Rubyists suggest avoiding class variables altogether.
+
+---
+
+What would the above code return, and why?
+
+```ruby
+class Vehicle
+  @@wheels = 4
+
+  def self.wheels
+    @@wheels
+  end
+end
+
+Vehicle.wheels                              # => ??
+
+class Motorcycle < Vehicle
+  @@wheels = 2
+end
+
+Motorcycle.wheels                           # => ??
+Vehicle.wheels                              # => ??
+
+class Car < Vehicle
+end
+
+Car.wheels                                  # => ??
+```
+
+The `Vehicle` class is defined over lines 1-7. We initialize the class variable `@@wheels` to `4`  on line 2, and define the class method `Vehicle::wheels` on lines 4-6. The `Vehicle::wheels` method simply returns the reference of the `@@wheels` class variable.
+
+So the call to `Vehicle.wheels` on line 9 returns the value `@@wheels` was initialized to on line 2, `4`.
+
+Next we define the `Motorcycle` subclass of `Vehicle` over lines 11-13. Here, we simply reassign the class variable `@@wheels`, which `Motorcycle` shares with its superclass `Vehicle`, to `2`.
+
+So when we call `Motorcycle.wheels` on line 15, the return value will be `2`. And when we call `Vehicle.wheels` on line 16, the return value will now be `2` also, since we are accessing a class variable shared between the superclass and all its subclasses.
+
+Another subclass of `Vehicle`, the `Car` class, is defined on 18-19. The definition for `Car` is empty. So when we call `Car.wheels` on line 21, the return value is again `2`.
+
+This example demonstrates that a class variable initialized in a superclass is shared by all of its subclasses.
+
+6m05s
+
+**Is it possible to reference a constant defined in another class?**
+
+There are various ways to reference a constant defined in another class. If the point of reference of the constant is lexically nested within the other class, and there is no identically-named constant in the current class, then the constant reference will be resolved in the lexical search.
+
+For instance,
+
+```ruby
+class Geometry
+  PI = 3.14159
+  
+  class Circle
+    def self.pi
+      PI
+    end
+  end
+end
+
+Geometry::Circle.pi # 3.14159
+```
+
+If there the constant we wish to reference is not in any of the lexically-enclosing structures of the reference, then Ruby begins a search of the inheritance chain beginning with the immediate lexical structure of the reference.
+
+For instance,
+
+```ruby
+class Shape
+  PI = 3.14159
+  
+  # rest of class omitted ...
+end
+
+class Circle < Shape
+  def self.pi
+    PI
+  end
+  
+  # rest of class omitted ...
+end
+
+puts Circle.pi # 3.14159
+```
+
+If we wish to reference a constant from another class that is neither in the lexical search path nor in the inheritance chain, it is possible to reference a constant defined in another class by qualifying the name of the constant with the name of the class using the `::` namespace resolution operator.
+
+For instance,
+
+```ruby
+class Circle
+  PI = 3.14159
+end
+
+class Sphere
+  def self.pi
+    Circle::PI
+  end
+end
+
+puts Sphere.pi # 3.14159
+```
+
+**What is the namespace resolution operator?**
+
+The namespace resolution operator is a real operator, as opposed to a method. It can be used to reference classes, modules and constants nested inside a module or class. The operator is used to qualify the name of a constant or class by prefixing it with the name of the enclosing module or class.
+
+For instance,
+
+```ruby
+module Geometry
+  class Circle
+    PI = 3.14159
+  end
+end
+
+circle = Geometry::Circle.new
+puts circle.inspect # <Geometry::Circle:0x...>
+puts Geometry::Circle::PI # 3.14159
+```
+
+Here, we define the `Geometry` module on lines 1-5, which contains the `Circle` class definition on lines 2-4. The `Circle` class contains the definition for the `PI` constant on line 3. On line 7, we use the namespace resolution operator to reference `Circle` inside the namespace of `Geometry` in order to instantiate a new `Geometry::Circle` object. On line 9, we use the namespace operator to reference the constant definition for `PI` inside the `Circle` class inside the `Geometry` module.
+
+The namespace operator can also be used to call methods, though the dot operator is conventionally preferred.
+
+---
+
+**How are constants used in inheritance?**
+
+Constants have lexical scope, which means that when Ruby encounters an unqualified constant reference, it begins searching for a definition with the lexical structure in the source code that encloses the reference: the module or class where the reference occurs. If this structure is lexically nested inside other structures, Ruby will widen the search outward, up to but not including the top-level scope.
+
+However, if the lexical part of the search is completed and no definition is yet found, Ruby begins searching the inheritance chain of the lexically-enclosing structure (class or module) of the reference. If the constant is still not found, eventually top-level is searched.
+
+For example,
+
+```ruby
+class Guitar
+  STRINGS = 6
+end
+
+class ElectricGuitar < Guitar
+  def number_of_strings
+    STRINGS
+  end
+end
+
+class Bass < ElecticGuitar
+  STRINGS = 4
+end
+
+bass = Bass.new
+bass.number_of_strings # 6
+```
+
+Here, we define a `Guitar` class on lines 1-3 that contains the definition of a constant `STRINGS` as `6`. Next we define an `ElectricGuitar` subclass of `Guitar`, which contains an instance method `number_of_strings` which returns the reference of a constant `STRINGS`. Then we define a `Bass` subclass of `ElectricGuitar` which contains its own definition for `STRINGS` as `4`.
+
+When `number_of_strings` is invoked on a `Bass` object on line 16, Ruby first searches for a method of this name in the method lookup path, finds `ElectricGuitar#number_of_strings` and calls this method (defined on lines 6-8). Ruby then encounters the constant reference `STRINGS`.
+
+The lexical search begins with the structure that lexically encloses the reference in the source code, here the `ElectricGuitar` class. It cannot find a definition here. Since there are no further enclosing structures, Ruby then begins the inheritance hierarchy search, but it begins it with the class that lexically-encloses the reference to `STRINGS` on line 7, the `ElectricGuitar` class.
+
+Ruby searches the superclass, `Guitar`, and finds a definition for `STRINGS`. So because of the lexical starting point of the search, the call to `number_of_strings` on a `Bass` object ends up returning the definition for the `Guitar::STRINGS` constant, `6`, not the `Bass::STRINGS` constant definition, `4`.
+
+In order to reference the correct constant, we can dynamically reference the class of the calling object in `number_of_strings` using the `self` keyword and the namespace operator:
+
+```ruby
+class Guitar
+  STRINGS = 6
+end
+
+class ElectricGuitar < Guitar
+  def number_of_strings
+    self.class::STRINGS
+  end
+end
+
+class Bass < ElecticGuitar
+  STRINGS = 4
+end
+
+bass = Bass.new
+bass.number_of_strings # 4
+```
+
+The full lookup for constants with respect to inheritance is, first, the lexical scope of the reference, then the inheritance hierarchy beginning with the lexically-enclosing structure of the reference, then finally the top-level.
+
+---
+
+Describe the error and provide two different ways to fix it.
+
+```ruby
+module Maintenance
+  def change_tires
+    "Changing #{WHEELS} tires."
+  end
+end
+
+class Vehicle
+  WHEELS = 4
+end
+
+class Car < Vehicle
+  include Maintenance
+end
+
+a_car = Car.new
+a_car.change_tires             
+```
+
+On lines 1-5 we define a `Maintainance` module, containing one instance method, `change_tires`.
+
+Next we define a `Vehicle` superclass (lines 7-9) and a `Car` subclass (lines 11-13) of `Vehicle`. `Vehicle` contains a constant definition for `WHEELS`, which is the integer `4`.
+
+`Car` mixes in the `Maintainance` module with a call to `Module#include` on line 12.
+
+On line 15, we instantiate a `Car` object, `my_car`, and then on line 16, we call the `change_tires` method on `my_car`. This method call results in a `NameError`.
+
+The `change_tires` method is defined in the `Maintainance` module and interpolates a reference to a constant, `WHEELS`, into its string return value. The problem is that constants have lexical scope, and this affects how constant lookup works with respect to inheritance. Ruby performs a search of the lexical context of the reference in order to find a definition for `WHEELS`. This consists of searching the `Maintainance` module only, since it is not nested in any other structure and the top-level is not searched at this point. Then, Ruby begins searching the inheritance hierarchy of the lexically-enclosing structure (`Maintainance`) rather than the class of the caller of `change_tires`, `Car`. Ruby then searches top-level, but does not find a definition there either, so `NameError` is raised.
+
+To fix this we could define `WHEELS` in `Maintainance` itself:
+
+```ruby
+module Maintainance
+  WHEELS = 4
+  
+  def change_tires
+    "Changing #{WHEELS} tires."
+  end
+end
+# rest of code omitted ...
+a_car.change_tires # "Changing 4 tires."
+```
+
+But this approach limits the reusability of the `Maintainance` class. A better solution is to make a dynamic constant reference using the keyword `self`, the `Kernel#class` method, and the namespace resolution operator, in order to reference the class of the caller of `change_tires`.
+
+```ruby
+module Maintenance
+  def change_tires
+    "Changing #{self.class::WHEELS} tires."
+  end
+end
+
+class Vehicle
+  WHEELS = 4
+end
+
+class Car < Vehicle
+  include Maintenance
+end
+
+a_car = Car.new
+a_car.change_tires # "Changing 4 tires."
+```
+
+Calling `class` on `self` when the calling object `self` is a `Car` object makes the reference on line 3 evaluate to `Car::WHEELS`. Although Ruby does not find the `WHEELS` constant in `Car` itself, it then searches the inheritance hierarchy of `Car`, and finds a definition for `WHEELS` in the superclass, `Vehicle`. 
+
+**When the namespace resolution operator is used to name a specific class to search for a constant and Ruby finds that the class does not contain its own definition for the constant, Ruby does not do a lexical search of any enclosing structures surrounding the class, but it does search the class's inheritance chain for a definition. Ruby skips the `Object` class in the inheritance chain, presumably because this would cause circular references existing in any class defined at top-level (the constant name of the custom class would exist in the `Object` parent class, so you could reference the custom class within itself)**
+
+**What is lexical scope?**
+
+In Ruby, constants have what is termed 'lexical scope'. Lexical scope means that when Ruby encounters a constant in the source code, it will search the lexical structure in which the constant reference occurs (i.e. the class or module) and then search any structures that lexically enclose the lexical structure of the reference, up to but not including the top-level. Once this lexical part of the search is finished, and if Ruby has still not found a definition for the constant, Ruby begins searching the class hierarchy of the lexically-enclosing structure, *not* the class hierarchy of the calling object. This can be unintuitive. For instance,
+
+```ruby
+class Guitar
+  STRINGS = 6
+  
+  def number_of_strings
+    STRINGS
+  end
+end
+
+class Bass < Guitar
+  STRINGS = 4
+end
+
+bass = Bass.new
+puts bass.number_of_strings # 6
+```
+
+Here, we define a `Guitar` class over lines 1-7. The class contains a definition of the constant `STRINGS` as `6`. We also define a `Guitar#number_of_strings` instance method (lines 4-5), whose body contains only a reference to the constant `STRINGS`, forming the return value.
+
+We define a subclass of `Guitar`, `Bass`, on lines 9-11. `Bass` defines its own `STRINGS` constant as `4`. However, when the `number_of_strings` method is called on a `Bass` object on line 14, the integer returned is that referenced by `Guitar::STRINGS`, not `Bass::STRINGS`.
+
+The reason is that although the `Bass` class inherits the `number_of_strings` method, the method is defined in the source code within the lexical structure of the `Guitar` class. Therefore, Ruby searches lexically of the reference on line 5, rather than searching the class of the calling object, `Bass`.
+
+If we wish to reference the constant defined in the `Bass` class, we can change the unqualified `STRINGS` reference to a dynamically qualified reference using the namespace resolution operator `::`.
+
+```ruby
+class Guitar
+  STRINGS = 6
+  
+  def number_of_strings
+    self.class::STRINGS
+  end
+end
+
+class Bass < Guitar
+  STRINGS = 4
+end
+
+bass = Bass.new
+puts bass.number_of_strings # 4
+```
+
+We have changed line 5 to reference `self.class`, which for this method call evaluates to `Bass`, and then use the namespace resolution operator to qualify the constant reference to `Bass::STRINGS` specifically.
+
+---
+
+**When dealing with code that has modules and inheritance, where does constant resolution look first?**
+
+When resolving an unqualified constant reference, Ruby first performs a lexical search of the reference, beginning with the lexically-enclosing structure surrounding the reference in the source code. This could be a module or a class. If this structure is enclosed within another lexical structure, the lexical search will move outward up to but not including top-level.
+
+Next, Ruby begins the search of the inheritance chain of the lexically-enclosing structure of the constant reference. The inheritance chain for a class will begin with the class itself, then any modules mixed in with `include` in reverse order of their inclusion, then the superclass. The process repeats for the superclass, and so on up the chain. Eventually top-level is searched.
+
+If the constant reference is lexically enclosed within a module rather than a class, the inheritance part of the search will move directly to top-level.
+
+```ruby
+module Geometric
+  PI = 3.14159
+end
+
+module Colorable
+end
+
+class Shape
+  include Geometric
+  include Colorable
+end
+
+class Circle < Shape
+  def pi
+    PI
+  end
+end
+
+circle = Circle.new
+circle.pi # 3.14159
+circle.class.ancestors # [Circle, Shape, Colorable, Geometric, Object, Kernel, BasicObject]
+```
+
+Here we define the `PI` constant within our `Geometric` class on line 2, initializing `PI` to `3.14159`.
+
+Next, we define a `Colorable` module on lines 5-6. We define a `Shape` superclass, and mixin the `Geometric` and `Colorable` modules in that order with two calls to `Module#include` on lines 9 and 10.
+
+We define a `Circle` subclass of `Shape`, which contains the instance method `pi`, which references an unqualified `PI` constant.
+
+We create a `Circle` object `circle` on line 19, and then call `pi` on `circle` on line 20. This method works as expected. The lookup path for the constant lookup inheritance chain is returned by the call to `Module#ancestors` on the `class` of `circle`, on line 21. First Ruby searches the class itself, `Circle`, then the superclass `Shape`. Then Ruby searches the mixed in modules in reverse order of the `include` calls, `Colorable` and then `Geometric`. At this point in the search, Ruby found the `PI` constant definition in `Geometric` and resolved the reference in the `Circle#pi` method on line 15. Otherwise, Ruby would have searched `Object`, its included module `Kernel`, and then its superclass `BasicObject`, and if it had still not found a definition, would have raised a `NameError`.
+
+---
+
+How can you make this code function? How is this possible?
+
+```ruby
+class Person
+  attr_accessor :name, :age
+
+  def initialize(name, age)
+    @name = name
+    @age = age
+  end
+end
+
+bob = Person.new("Bob", 49)
+kim = Person.new("Kim", 33)
+puts "bob is older than kim" if bob > kim
+```
+
+We define a `Person` class over lines 1-8. The `Person#initialize` constructor method defined on lines 4-7 takes two parameters `name` and `age` and uses them to initialize the instance variables `@name` and `@age`. On lines 10 and 11, we instantiate two `Person` objects, `bob` and `kim`, with ages `49` and `33` respectively. On line 12, we attempt to call a `Person#>` method to compare the two objects in an `if` modifier condtion, but no such method has been defined.
+
+To fix this problem we can define a `Person#>` object. Since the string on line 12 is `"bob is older than kim"`, it is clear that the `Person#>` method should compare the `age` attribute of its caller and argument. We can make use of the `Person#age` getter method generated by the call to `Module#attr_accessor` on line 2.
+
+```ruby
+class Person
+  attr_accessor :name, :age
+
+  def initialize(name, age)
+    @name = name
+    @age = age
+  end
+  
+  def >(other)
+    age > other.age
+  end
+end
+
+bob = Person.new("Bob", 49)
+kim = Person.new("Kim", 33)
+puts "bob is older than kim" if bob > kim # "bob is older than kim"
+```
+
+We define the `Person#>` method on lines 9-11. In the body of the definition, we simply call the `age` getter method on the calling object and use `Integer#>` to compare the returned value to the result of calling `age` on the object passed as argument. Since this is the only expression in the definition body, the boolean return value of `Integer#>` forms the return value of `Person#>`. Since the `age` of `bob` is `49` and the `age` of `kim` is `33`, the call to `Person#>` on line 16 returns `true` and the string is passed to `Kernel#puts` and output to the screen.
+
+This is possible because in Ruby `>` is not an operator but a method that can be defined on a class-by-class basis.
+
+8m26s
+
+---
+
+what happens here and why?
+
+```ruby
+my_hash = {a: 1, b: 2, c: 3}
+my_hash << {d: 4}  
+```
+
+```ruby
+my_hash = {a: 1, b: 2, c: 3}
+my_hash << {d: 4}  
+```
+
+On line 1, we initialize local variable `my_hash` to the Hash object `{a: 1, b: 2, c: 3}`.
+
+On line 2, we attempt to call the `<<` method on `my_hash` with a Hash literal passed as argument. This will raise a `NoMethodError` because the `<<` method is not defined for the Hash class.
+
+Like many of the operators in Ruby, `<<` is not a real operator but a method that can be defined on a class-by-class basis. The Hash class does not define this method.
+
+The `<<` method, when it is defined, is usually defined for collection classes to add a new member. However, Hash is not one of the built-in collection classes that defines it.
+
+**When do shift methods make the most sense?**
+
+The `>>` method is not commonly defined in custom classes.
+
+However, the `<<` method is commonly defined for collection classes to add a new member. The Array class is a built in class that defines `Array#<<` to push a new object to an array.
+
+A simple example of this semantic for a custom class might be:
+
+```ruby
+class Book
+  def initialize(author, title)
+    @author = author
+    @title = title
+  end
+end
+
+class BookShelf
+  def initialize
+    @shelf = []
+  end
+  
+  def <<(book)
+    @shelf << book
+  end
+end
+
+book = Book.new("Franz Kafka", "The Trial")
+bookshelf = Bookshelf.new
+bookshelf << book
+p bookshelf # #<BookShelf:0x00007fc14a729288 @shelf=[#<Book:0x00007fc14a7293c8 @author="Franz Kafka", @title="The Trial">]>
+```
+
+Here, we define a simple `Book` class on lines 1-6, whose `initialize` constructor method with two parameters, `author` and `title`, and uses them to initialize two instance variables `@author` and `@title`.
+
+The `BookShelf` class is defined on lines 8-16. The `Bookshelf#initialize` method initializes the instance variable `@shelf` to an empty array.
+
+The `BookShelf#<<` method takes a single parameter `book` and calls `Array#<<` on `@shelf` with `book` passed as argument.
+
+On line 18, we initialize a new `Book` object, `book`, and on line 19, we initialize a `BookShelf` object, `bookshelf`. On line 20, we call `BookShelf#<<` on `bookshelf` with `book` passed as argument.
+
+When we pass `bookshelf` to the `Kernel#p` method, on line 21, we can see from the output that the `book` object has successfully been added to the state of the `bookshelf` object as a new member of the collection.
+
+----
+
+What does the `Team#+` method currently return? What is the problem with this? How could you fix this problem?
+
+```ruby
+class Person
+  def initialize(name, age)
+    @name = name
+    @age = age
+  end
+end
+
+class Team
+  attr_accessor :name, :members
+
+  def initialize(name)
+    @name = name
+    @members = []
+  end
+
+  def <<(person)
+    members.push person
+  end
+
+  def +(other_team)
+    members + other_team.members
+  end
+end
+
+# we'll use the same Person class from earlier
+
+cowboys = Team.new("Dallas Cowboys")
+cowboys << Person.new("Troy Aikman", 48)
+
+niners = Team.new("San Francisco 49ers")
+niners << Person.new("Joe Montana", 59)
+dream_team = cowboys + niners               # what is dream_team?
+```
+
+This code current initializes `dream_team` to an Array object.
+
+There is a semantic problem with this. The conventional semantics for the `+` method in Ruby are either addition or concatenation, the latter being the case here. However, conventionally, the result of the `+` method is almost always a new object of the calling object's class. Since the variable is named `dream_team`, we might expect this concatenation of two teams to return a `Team` object.
+
+We can fix this as follows:
+
+```ruby
+class Team
+  attr_accessor :name, :members
+
+  def initialize(name, members = [])
+    @name = name
+    @members = members
+  end
+
+  def <<(person)
+    members.push person
+  end
+
+  def +(other_team)
+    Team.new("temporary team name", members + other_team.members)
+  end
+end
+```
+
+Here, we have made changes to the `Team#initialize` method and the `Team#+` method. Instead of setting the `@members` instance variable to an empty array, the method now sets it to the `members` parameter, which has a default value of an empty array. This means we can instantiate a new `Team` object with or without passing an array of `Person` objects into the constructor.
+
+The body of the `Team#+` definition has been changed to instantiate a new `Team` object and return it. The first argument to `Team::new` is a placeholder team name string, and the second is the concatenation of two arrays of `Person` objects returned by `members + other_team.members`, which can now be used to initialize the state of the `Team` object.
+
+The downside to using the `+` method in this way is that `+` can only be defined to take one argument (since it mimics a binary operator) and thus we cannot provide a distinct name for the new `Team` at the point of instantiation.
+
+10m43s
+
+---
+
+**Explain how the element getter (reference) and setter methods work, and their corresponding syntactical sugar.**
+
+The element setter (assignment) and getter (reference) methods might appear to be subscript and assignment operators but are in fact instance methods defined on a class-by-class basis.
+
+The `[]` method is conventionally defined to retrieve an element from a collection class. For instance, `Array#[]`. The syntactic sugar available at invocation can disguise the fact that we are calling a method.
+
+```ruby
+arr = [1, 2, 3]
+
+puts arr[1]
+# the above is equivalent to:
+puts arr.[](1) 
+```
+
+Similarly, the `Array#[]=` method is conventionally defined to set an element in a collection class. It can be called with or without its fairly extreme syntactical sugar:
+
+```ruby
+arr = [1, 2, 3]
+
+arr[1] = 9
+# the above is equivalent to
+arr.[]=(1, 9)
+```
+
+For a `[]` getter method, we pass a single argument as some kind of index into the collection object. The return value is the element at that index.
+
+For a `[]=` setter method, we pass two arguments: some kind of index, and a value we wish to insert at that index. 
+
+We can define element setter and getter methods for a collection class as follows:
+
+```ruby
+class Book
+  def initialize(author, title)
+    @author = author
+    @title = title
+  end
+end
+
+class Bookshelf
+  def initialize
+    @books = []
+  end
+  
+  def [](index)
+    @books[index]
+  end
+  
+  def []=(index, book)
+    @books[index] = book
+  end
+end
+
+book = Book.new("Franz Kafka", "The Trial")
+bookshelf = Bookshelf.new
+bookshelf[0] = book # => <Book:0x0x00007f458ce2a3f0 @author="Franz Kafka", @title="The Trial">
+p bookshelf[0] # #<Book:0x00007f458ce2a3f0 @author="Franz Kafka", @title="The Trial">
+```
+
+Here we define a `Book` class (lines 1-6) and a `Bookshelf` collection class (lines 8-20) that will represent a collection of `Book` objects.
+
+The `Bookshelf#initialize` method initializes the `@books` instance variable to an empty array, on line 10.
+
+We then define an element reference method `Bookshelf#[]` on lines 13-15, which has one parameter, `index`, which it uses to index into the `@books` array and returns the element at that index.
+
+The `Bookshelf#[]=` element setter method is defined on lines 17-19, and takes an `index` and a `book`. We use the special element setter syntactic sugar to call `Array#[]=` with `index` as the index and `book` as the element to assign to that index.
+
+We can see the successful operation of these methods on lines 24-25, where we use `Bookshelf#[]=` to set the element at index `0` with the `book` object, and then retrieve the object again using `Bookshelf#[]` with `0` as the index argument. The element assignment on line 24 returns the second argument, `book`.
+
+---
+
+**How is defining a class different to defining a method?**
+
+Defining a class is similar in syntax to a method definition, but instead of the keyword `def` we use the keyword `class`, and whereas the name of a method should be in lower `snake_case`, the name of a class should be in upper `PascalCase`. Both types of definition close with the keyword `end`:
+
+```ruby
+class ClassName
+end
+
+def method_name
+end
+```
+
+---
+
+**How do you create an instance of a class? By calling the class method `new`**
+
+We instantiate an object of a class by calling the class method `new` on the class.
+
+```ruby
+class Cat
+end
+
+felix = Cat.new
+```
+
+---
+
+When a class starts with a mixin inclusion, constant definitions, and `attr_*` methods, this is the correct order
+
+```ruby
+module SomeModule; end
+
+class SomeClass
+  include SomeModule
+  
+  SOME_CONSTANT = 3.14159
+  
+  attr_accessor :some_attribute
+  
+  def initialize; end
+end
+```
+
+**What are two different ways that a getter method can be invoked within the class?**
+
+```ruby
+getter_method || self.getter_method
+```
+
+**How do you define a class method?**
+
+We can define a class method within a class definition by prepending the keyword `self` before the name of the method using the dot operator:
+
+```ruby
+class Temperature
+  def self.celsius_to_fahrenheit(celsius)
+    celsius * 9 / 5.0 + 32
+  end
+end
+
+puts Temperature.celsius_to_fahrenheit(100) # 212.0
+puts Temperature.celsius_to_fahrenheit(0) # 32.0
+```
+
+At the class level, outside of instance method definitions, the keyword `self` references the class. So the above definition is the equivalent to `def Temperature.celsius_to_fahrenheit`. `self` is conventionally preferred to referring directly to the class when defining a class method.
+
+----
+
+What is wrong with the code above? Why? What principle about getter/setter methods does this demonstrate?
+
+```ruby
+class Cat
+  attr_accessor :name
+
+  def initialize(name)
+    @name = name
+  end
+  
+  def rename(new_name)
+    name = new_name
+  end
+end
+
+kitty = Cat.new('Sophie')
+p kitty.name # "Sophie"
+kitty.rename('Chloe')
+p kitty.name # "Chloe"
+```
+
+The problem with this code lies in the `Cat#rename` instance method definition. The `Cat` class is defined over lines 1-11. The call to `Module#attr_accessor` on line 2 generates setter and getter methods for a `@name` instance variable. The `rename` method, defined on lines 8-10, attempts to call the getter method `name=`. However, line 10, the method definition body, does not call `Cat#name=` but initializes a new local variable called `name`. 
+
+This is because we need to prepend the keyword `self` with the dot operator before the name of the setter in order to disambiguate a call to a setter method from the initialization of a local variable.
+
+The method problem can be solved by changing line 9, so our code becomes:
+
+```ruby
+class Cat
+  attr_accessor :name
+
+  def initialize(name)
+    @name = name
+  end
+  
+  def rename(new_name)
+    self.name = new_name
+  end
+end
+
+kitty = Cat.new('Sophie')
+p kitty.name # "Sophie"
+kitty.rename('Chloe')
+p kitty.name # "Chloe"
+```
+
+In the context of an instance method definition, `self` references the calling object, the instance on which the current instance method has been called.
+
+5m29s
+
+**How do you print an object so you can see the instance variables and their values along with the object?**
+
+In order to print a string that represents the object including its instance variables and their values, we can use the `Kernel#p` method. The `p` method calls `inspect` on its argument, giving a more detailed representation of the object than the one returned by `to_s`.
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+p fluffy # <Cat:0x... @name="Fluffy">
+```
+
+The default `Object#inspect` method returns a string containing the name of the class of the object, an encoding of the object's object id, and a list of the object's instance variables with their values.
+
+**When writing the name of methods in normal/markdown text, how do you write the name of an instance method? A class method?**
+
+To write the name of an instance method, for example the `inspect` instance method of the `Object` class, we use a `#` symbol to denote that it is an instance method of the class: `Object#inspect`.
+
+To denote a class method, such as the `sqrt` class method of the `Integer` class, we use the symbols `::`: `Integer::sqrt`.
+
+These are conventions in the Ruby documentation and should not be used as syntax in Ruby code. A class method can be called using the `::` operator, but the dot operator is preferred. An instance method cannot be called with `#`.
+
+**How do you override the `to_s` method? What does the `to_s` method have to do with `puts`?**
+
+We can override the `to_s` method simply by defining a method called `to_s` as an instance method of a class. `to_s` is implicitly called by `Kernel#puts` on its argument so that `puts` has a String to output. For instance,
+
+```ruby 
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def to_s
+    "A cat named #{@name}"
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+puts fluffy # "A cat named Fluffy"
+```
+
+It is important that our `to_s` method definition does actually return a String. If we try to return a different class of object, then whenever `to_s` is called implicitly, like by `puts`, Ruby will call a method higher up the inheritance hierarchy in order to return a String, usually `Object#to_s`.
+
+---
+
+```ruby
+class Vehicle
+  attr_reader :year
+
+  def initialize(year)
+    @year = year
+  end
+end
+
+class Truck < Vehicle
+  def initialize(year, bed_type)
+    super(year)
+    @bed_type = bed_type
+end
+
+class Car < Vehicle
+end
+
+truck1 = Truck.new(1994, 'Short')
+puts truck1.year
+puts truck1.bed_type
+```
+
+In order to make this code work, we need to add an `end` keyword to match the `def` keyword on line 10 of the `Truck#initialize` method definition. We then need to add a `Truck#bed_type` getter method, which we can do with a call to `Module#attr_reader` with `:bed_type` passed as a Symbol argument.
+
+```ruby
+class Vehicle
+  attr_reader :year
+
+  def initialize(year)
+    @year = year
+  end
+end
+
+class Truck < Vehicle
+  attr_reader :bed_type # generate `bed_type` getter method
+
+  def initialize(year, bed_type)
+    super(year)
+    @bed_type = bed_type
+  end # end keyword needed
+end
+
+class Car < Vehicle
+end
+
+truck1 = Truck.new(1994, 'Short')
+puts truck1.year
+puts truck1.bed_type
+```
+
+---
+
+Given the following code, modify #start_engine in Truck by appending 'Drive fast, please!' to the return value of #start_engine in Vehicle. The 'fast' in 'Drive fast, please!' should be the value of speed.
+
+```ruby
+class Vehicle
+  def start_engine
+    'Ready to go!'
+  end
+end
+
+class Truck < Vehicle
+  def start_engine(speed)
+    super() + " Drive #{speed}, please"
+  end
+end
+
+truck1 = Truck.new
+puts truck1.start_engine('fast')
+
+# Expected output:
+
+# Ready to go! Drive fast, please!
+```
+
+1m50s
+
+---
+
+**When do you use empty parentheses with `super`?**
+
+Called without parentheses, `super` causes all the subclass method's arguments to be passed to the superclass method of the same name. We use empty parentheses with `super` in order to prevent passing through any of the subclass method's arguments. This is useful when the superclass method does not have any parameters. Were we to pass through arguments, an `ArgumentError` would be raised.
+
+As an example, if we were designing classes for a piece of software used by a vet:
+
+```ruby
+class Pet
+  attr_reader :appointments_history
+
+  def initialize
+    @appointments_history = []
+  end
+end
+
+class Cat < Pet
+  def initialize(name)
+    super() # need to avoid passing `name` through to superclass method
+    @name = name
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+p fluffy.appointments_history # []
+p fluffy # <Cat:0x... @appointments_history=[], @name="Fluffy">
+```
+
+Here, we define a `Pet` class whose `initialize` constructor method takes no arguments, but initializes an instance variable to track previous appointments, `@appointments_history`, to an empty array.
+
+Our `Cat` class, defined on lines 9-14, has an `initialize` definition (lines 10-13) that needs to call the superclass method in order to initialize an `@appointments_history` instance variable. However, we do not wish to pass the `name` parameter variable through to the superclass. Thus we call `super()` with empty parentheses in order to pass no arguments through, on line 11.
+
+13m27s
 
 
 
