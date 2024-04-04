@@ -1,18 +1,19 @@
-class Pet
-  attr_reader :appointments_history
+class Person
+  def name=(new_name)
+    @first_name, @last_name = new_name.split
+  end
 
-  def initialize
-    @appointments_history = []
+  def name
+    "#@first_name #@last_name".strip
   end
 end
 
-class Cat < Pet
-  def initialize(name)
-    super() # need to avoid passing `name` through to superclass method
-    @name = name
-  end
-end
+person1 = Person.new
+person1.name = 'John Doe'
+puts person1.name.inspect # "John Doe"
+p person1 # <Person:0x... @first_name="John", @last_name="Doe"
 
-fluffy = Cat.new("Fluffy")
-p fluffy.appointments_history # []
-p fluffy # <Cat:0x... @name="Fluffy", @appointments_history=[]>
+person2 = Person.new
+person2.name = "Fred"
+p person2
+p person2.name
