@@ -1,19 +1,32 @@
-class Person
-  def name=(new_name)
-    @first_name, @last_name = new_name.split
-  end
+class GoodDog
+  DOG_YEARS = 7
 
-  def name
-    "#@first_name #@last_name".strip
+  attr_accessor :name, :age
+
+  def initialize(n, a)
+    self.name = n
+    self.age  = a * DOG_YEARS
   end
 end
 
-person1 = Person.new
-person1.name = 'John Doe'
-puts person1.name.inspect # "John Doe"
-p person1 # <Person:0x... @first_name="John", @last_name="Doe"
+sparky = GoodDog.new("Sparky", 4)
+puts sparky
 
-person2 = Person.new
-person2.name = "Fred"
-p person2
-p person2.name
+
+# What is output and why? How could we output a message of our choice instead?
+
+# How is the output above different than the output of the code below, and why?
+
+class GoodDog
+  DOG_YEARS = 7
+
+  attr_accessor :name, :age
+
+  def initialize(n, a)
+    @name = n
+    @age  = a * DOG_YEARS
+  end
+end
+
+sparky = GoodDog.new("Sparky", 4)
+p sparky
