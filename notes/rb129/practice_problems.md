@@ -1489,3 +1489,1248 @@ puts sparky # "Sparky is 28 in dog years"
 
 12m16s
 
+29.
+
+**When does accidental method overriding occur, and why?**
+
+Accidental method overriding is most likely to occur when, within a class, we define a method whose name clashes with the name of a method inherited from `Object`, `Kernel` or `BasicObject`, though it's possible to accidentally override a method inherited from any class if we are careless enough.
+
+Almost all classes in Ruby inherit from the `Object` class. A custom class defined without an explicit superclass will inherit from `Object`. `Object` mixes in the `Kernel` module and subclasses from `BasicObject`, which is the ultimate ancestor of all Ruby classes.
+
+Method overriding works because of the way Ruby handles method calls: by searching the method lookup path. When a method is invoked on an object, Ruby searches the method lookup path for a method with that name. Ruby searches the class of the object, then searches any mixin modules in the reverse order of their inclusion, and then repeats the process with the superclass. This can continue until `BasicObject` if no method with that name is found before.
+
+Method overriding means placing a new definition for a method with a given name earlier in the method lookup path than the inherited definition. For instance, a class inherits a method called `send` from the `Object` class; that method can be called on the object and Ruby will search the method lookup path until it reaches `Object`, finds a method definition with that name, and executes that method definition. If our custom class overrides the `send` method, this simply means that our class defines a method called `send`. So this time, when `send` is called on an object of the class, Ruby will search the custom class, find a method named `send`, and execute it, without ever reaching the `Object` class with its definition for `send`.
+
+However, we almost never want to override `send`, because it implements a core piece of Ruby functionality. Since `send` is a common English verb, it is quite likely that someone might wish to write a method with this name, either unaware or forgetting that `Object#send` implements a core piece of Ruby functionality, and that defining a `send` method in our own class will override it. And while we are usually aware of the methods we have defined in our own superclasses, we are much more likely to forget the names of methods defined for us by the `Object` class and its inheritance chain. Thus it is useful to be acquainted with the methods defined in `Object` and its inheritance chain in order to avoid accidentally overriding important built-in methods.
+
+16m04s
+
+30.
+
+**How is Method Access Control implemented in Ruby? Provide examples of when we would use public, protected, and private access modifiers.**
+
+In OO languages, access control is a mechanism that provides fine-grained control over how strongly individual elements of an object will be encapsulated. Since Ruby prevents any direct access to an object's instance variable, we normally speak of 'method access control' in relation to Ruby.
+
+Method access control is exercised in Ruby through the use of methods defined in `Module` known as access modifiers: `public`, `private`, and `protected`. `public` is less commonly called explicitly because methods defined in a class are `public` by default.
+
+The `public` methods of a class comprise its public interface. We can call a `public` instance method on an object from anywhere in our code that we have a reference to that object.
+
+`private` methods can only be called from within the class. `private` instance methods can only be called by other instance methods, and cannot be called from outside the object. `private` methods are implementation details, helper methods that support the class's `public` methods but that we do not want to be called by client code (perhaps because they manipulate instance variables whose potential values we want to constrain).
+
+`protected` methods are similar to `private` methods with the exception that they can be called from within the class on another instance of the class (usually an object of the same class that has been passed in to a `public` instance method as an argument).
+
+For example,
+
+```ruby
+class Customer
+  def initialize(name, age, card_number)
+    @name = name
+    @age = age
+    @card_number = card_number
+  end
+  
+  def older?(other)
+    age > other.age
+  end
+  
+  def payment_details
+    "xxxx-xxxx-xxxx-#{card_number[-4..-1]}"
+  end
+
+  protected
+  
+  attr_reader :age
+  
+  private
+  
+  attr_reader :card_number
+end
+
+bob = Customer.new("Robert Duvall", 44, "8962-1234-4321-8267")
+jim = Customer.new("James Smith", 23, "2938-1234-4321-8212")
+
+bob.older?(jim) # true
+puts bob.payment_details # "xxxx-xxxx-xxxx-8267"
+
+bob.age # raises NoMethodError
+bob.card_number # raises NoMethodError
+```
+
+Here, we have defined a `Customer` class. We want client code to be able to determine whether one `Customer` is older than another, but we do not wish the precise `age` of a customer to be publicly available. We make the `age` getter method `protected` (lines 16-18) and provide a `public` method `older?` (defined on lines 8-10) that takes another `Customer` object as argument and calls the `age` method on the calling object and on the other `Customer` object before comparing the return values with `Integer#>` (line 9). We can see `Customer#older?` demonstrated on line 28. Note that a `private` method could not be called on the other `Customer` passed as argument.
+
+We want to keep the `card_number` attribute entirely `private` to the class (lines 20-22) but we wish to be able to expose part of the `card_number` through a `public` method `payment_details` (defined on lines 12-14). The `payment_details` method is defined to call the `private` method `card_number` and to interpolate only the last four digits into the string that it returns (line 13).
+
+On 31-32, we can see that calling either `age` or `card_number` from outside the class raises a `NameError`, since `private` and `protected` methods can only be called from within the class.
+
+
+
+**Describe the distinction between modules and classes**
+
+Like classes, modules can contain instance methods. Modules cannot be used in conventional class inheritance, which is to say, a module cannot subclass a class, nor can it be the superclass of a class. However, modules can be mixed in to a class, which will then inherit the instance methods defined in the module. Whereas class inheritance represents an 'is-a' relationship, meaning a subclass is a specialized type with respect to its superclass, the relationship between a class and a mixin module is a 'has-a' relationship. The class 'has an' ability that the module provides.
+
+The key difference between a module and a class is that classes can be instantiated as objects whereas modules cannot. A module can only ever provide functionality, it cannot create objects that encapsulate state.
+
+5m38s
+
+
+
+31.
+
+**What is polymorphism and how can we implement polymorphism in Ruby?**
+
+'Poly' means 'many' and 'morph' means 'forms'. Polymorphism is the ability of different types of object to respond to a common interface. Polymorphism means that we can call a method of a given name on an object, and as long as the object has a compatible method of that name, we do not have to care what type or class of object it is.
+
+In Ruby, there are three ways to implement polymorphism when designing classes: through class inheritance, through mixin modules, and through duck-typing.
+
+Class inheritance can be used to provide a common interface to multiple data types. A superclass can define an instance method, and subclasses will inherit this method. So when we come to write code that uses objects of these various types, we can simply call the method without worrying which specific class an object belongs to. We can also override the inherited method  if we need a more specialized implementation for the same interface. The common interface for the class hierarchy lets us work with objects of all types in the hierarchy in exactly the same way even though the implementations may be very different.
+
+For instance,
+
+```ruby
+class Vehicle
+  def start_engine
+    "Starting engine"
+  end
+end
+
+class Car < Vehicle
+end
+
+class Boat < Vehicle
+  def start_engine
+    "Starting outboard motor"
+  end
+end
+
+vehicles = [Vehicle.new, Car.new, Boat.new]
+vehicles.each { |vehicle| puts vehicle.start_engine }
+# "Starting engine"
+# "Starting engine"
+# "Starting outboard motor" 
+```
+
+Here, we create a class hierarchy consisting of a superclass `Vehicle` (defined on lines 1-5) and two subclasses `Car` (lines 7-8) and `Boat` (lines 10-14).
+
+The `Vehicle` superclass defines a `start_engine` instance method, which is inherited by both subclasses. The `Boat` class overrides the `start_engine` method to provide its own, different implementation.
+
+We can see polymorphism in action with the call to `Array#each` on line 17, where objects of the three different classes are passed in turn to the block, which simply calls a `start_engine` method on the object passed in without concern for the specific type. Since objects of all three classes respond to the interface, our code works as intended.
+
+
+
+Mixin modules can also be used to implement polymorphism when designing our classes. When two or more classes mix in the same module containing instance method definitions, they will inherit functionality with the same interface. This is sometimes called 'interface inheritance'.
+
+For instance,
+
+```ruby
+module Climbable
+  def climb
+    "I'm climbing"
+  end
+end
+
+class Person
+  include Climbable
+end
+
+class Cat
+  include Climbable
+end
+
+climbers = [Person.new, Cat.new]
+
+climbers.each { |climber| puts climber.climb }
+# "I'm climbing"
+# "I'm climbing"
+```
+
+Here, the `Climbable` module (lines 1-5) defines an instance method called `climb`. We define a `Person` class (lines 7-9) and a `Cat` class (lines 11-13). These two classes are not related through class inheritance but both mix in the `Climbable` module, which provides them with a common interface (the `climb` method).
+
+Again, we can see polymorphism in action with a call to `Array#each` on  line 17, which passes an object of each of the two classes to the block, which simply calls `climb` on each object without needing to know what specific class it belongs to.
+
+
+
+Duck typing is the ability of completely unrelated types to respond to a common interface. If we have a method that takes an argument and calls a `quack` method on the object passed as argument, then we can pass it any object that exposes a `quack` method. If an object quacks like a duck, it can be treated like a duck. The object belongs to the right category for the task at hand, regardless of which class it belongs to, so long as that class implements a `quack` method.
+
+To implement polymorphism through duck typing, we simply need to define a method with the same name and number of required parameters in two or more classes. These unrelated classes can then be used polymorphically.
+
+For instance,
+
+```ruby
+class Duck
+  def fly
+    "The duck flies"
+  end
+end
+
+class Swan
+  def fly
+    "The swan flies"
+  end
+end
+
+birds = [Duck.new, Swan.new]
+birds.each { |bird| puts bird.fly }
+# "The duck flies"
+# "The swan flies"
+```
+
+Here, we define a `Duck` class (lines 1-5) and a `Swan` class (lines 7-8). These classes are not related by class inheritance or by any shared module, but both classes define a `fly` method that takes no parameters. We can see polymorphism through duck typing in action on line 14, where `each` is called on an array containing an object each of both classes. Each object is passed in turn to the block, which successfully calls `fly` on each object in turn without regard for the type of object.
+
+```ruby
+class AutoShop
+  def tune_car(tuners, car)
+    tuners.each do |tuner|
+      tuner.tune(car)
+    end
+  end
+end
+
+class EngineMechanic
+  def tune(car)
+    # ...
+  end
+end
+
+class BrakeMechanic
+  def tune(car)
+    # ...
+  end
+end
+
+class Apprentice
+  def tune(car)
+    # ...
+  end
+end
+
+class Car; end
+
+shop = AutoShop.new
+car = Car.new
+engine_tech = EngineMechanic.new
+brake_tech = BrakeMechanic.new
+apprentice = Apprentice.new
+shop.tune_car([engine_tech, brake_tech, apprentice], car)
+```
+
+
+
+33.
+
+**What is encapsulation, and why is it important in Ruby?**
+
+Encapsulation means to hide functionality behind a publicly exposed interface. Encapsulation serves to protect data from accidental modification, and reduces code dependencies by separating the representation of the object from the interface through which client code interacts with it. 
+
+Encapsulation means to enclose something, as if in a capsule. In Ruby, encapsulation is achieved by instantiating objects whose interface is predetermined by the public methods defined by the object's class. Objects encapsulate state, which is too say that an object's instance variables can only be accessed by client code, if at all, through the object's public interface -- the public instance methods defined by its class. Users of an object only need to know the public interface, the names of the public methods and the parameters they take, and thus client code can only become dependent on the interface and not on implementation details or the representation of the object. We are thus free to change the implementation so long as the interface remains stable.
+
+Method access control can be used for a more fine-grained control of which methods in the class comprise the public interface, and which are implementation details that can be changed without breaking code that makes use of the class.
+
+For example,
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def change_name(new_name)
+    self.name = name
+  end
+  
+  def speak
+    puts "#{name} says meow!"
+  end
+  
+  private
+  
+  attr_accessor :name
+end
+
+fluffy = Cat.new("Fluffi")
+fluffy.change_name("Fluffy")
+fluffy.speak # "Fluffy says meow!"
+```
+
+Here, we make use of the `Cat` class on lines 19-21 without needing to know how the class is implemented. We pass in a string as a name when we instantiate a new `Cat` object, and we can change the name using the `change_name` method. We do not need to know the implementation of the `change_name` method or how the name is stored internally. The getter and setter for the `name` attribute are kept `private` and cannot be called from outside the class. We can call a `speak` method on our `Cat` object and it well print a representation of our `Cat` making a sound that includes the `name` of our particular `Cat`, but again we do not need to know how this is implemented to use the method. We ask the `Cat` to speak, and it does.
+
+
+
+34.
+
+```ruby
+module Walkable
+  def walk
+    "#{name} #{gait} forward"
+  end
+end
+
+class Person
+  include Walkable
+
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  private
+
+  def gait
+    "strolls"
+  end
+end
+
+class Cat
+  include Walkable
+
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  private
+
+  def gait
+    "saunters"
+  end
+end
+
+mike = Person.new("Mike")
+p mike.walk
+
+kitty = Cat.new("Kitty")
+p kitty.walk
+
+
+# What is returned/output in the code? Why did it make more sense to use a module as a mixin vs. defining a parent class and using class inheritance?
+```
+
+The code will output
+
+```
+Mike strolls forward
+Kitty saunters forward
+```
+
+The reason that we define the `walk` method in a module, `Walkable` (lines 1-5), which is mixed in to the two classes `Person` (7-21) and `Cat` (23-37), is that the two classes that need this functionality do not fit neatly into a class hierarchy. Although the a `Person` and a `Cat` may require the ability to `walk`, there is no neat conceptual superclass that the two classes can subclass from.
+
+Perhaps if the `Person` class were a `Human` class, there would be a clearer case for defining an `Animal` superclass for the two classes to subclass, but the nouns of the problem domain have suggested that these entities are not related by a taxonomic hierarchy.
+
+6m08s
+
+
+
+35.
+
+What is Object Oriented Programming, and why was it created? What are the benefits of OOP, and examples of problems it solves?
+
+Object Oriented Programming is a programming paradigm developed to try to solve the problems of maintaining large, complex software projects. OOP aims to reduce code dependencies and improve the scalability and maintainability of code.
+
+As pre-OOP programs grew in scale and complexity, there was a tendency for programs to become a mass of dependencies, where every part of the code base depended on every other part. Code could not be changed and features could not be added without a ripple of adverse effects throughout the program.
+
+OOP attempts to modularize programs, creating containers for data that can be changed without affecting other parts of the code base, sectioning off functionality and data behind interfaces, so that a program becomes the interaction of many small, discrete parts, rather than a blob of dependency.
+
+By abstracting away implementation details behind interfaces, OOP allows the programmer to think at a higher level of abstraction, the level of entities or 'nouns' in the problem domain, or real-world objects. This helps break down the overall problem down into smaller and more manageable pieces that can be solved independently.
+
+OOP languages provide support for features such as encapsulation, inheritance, and polymorphism, allowing for a greater degree of code reuse in a greater variety of contexts.
+
+
+
+36.
+
+**What is the relationship between classes and objects in Ruby?**
+
+A class functions as a blueprint or template for objects. An object's class predetermines the attributes and behaviors of the object. An object's attributes are tracked by its instance variables, and an object's behavior is the set of instance methods available to be called on that object. Creating a new object from a class is known as instantiation.
+
+Classes group behavior; all objects of a class share a set of available instance methods. The instance methods available to an object are shared with every other object of the class.
+
+Objects encapsulate state; all instance variables initialized in an object are individual to that object and track the unique state of that particular object.
+
+Each object of a class has its own set of instance variables. An instance variable is only created in an object when the instance method that initializes the variable is called on the object. Although all objects of a class share a group of available instance methods, and the class thus predetermines the set of names of instance variables that can potentially be initialized in an object of the class, every object has its own set of actual instance variables that track that object's unique state.
+
+Creating a new object from a class is known as instantiation. Objects are instantiated by calling the `new` class method on the class, which in turn calls the `initialize` instance method which sets the initial state of the object.
+
+For instance,
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+tom = Cat.new("Tom")
+
+puts fluffy.inspect # <Cat:0x... @name="Fluffy">
+puts tom.inspect # <Cat:0x... @name="Tom">
+```
+
+Here we define a `Cat` class (lines 1-5), which defines a single instance method, the constructor `initialize` which is called by the class method `new` whenever a new object is instantiated, with all arguments to `new` passed through. The `initialize` method initializes a new instance variable `@name` to the parameter `name` (line 3).
+
+On line 7-8, we instantiate two new `Cat` objects to which we initialize local variables `fluffy` and `tom`. The objects are instantiated by calling class method `new` on `Cat`.
+
+On lines 10-11, we call `inspect` on `fluffy` and `tom` and pass the string return values to the `Kernel#puts` method. From the output we can see that the shared `initialize` method has initialized a `@name` variable in each `Cat` object that is individual to that object and the two `Cat` objects track different states.
+
+
+
+37.
+
+**When should we use class inheritance vs. interface inheritance?**
+
+Class inheritance is used to represent an 'is-a' relationships between a subclass and a superclass. The subclass is a specialized type of the type of the more generic superclass. Class inheritance is therefore appropriate to entities in the problem domain that have naturally hierarchical or taxonomic relationships. A class subclasses a superclass using the `<` operator.
+
+For instance,
+
+```ruby
+class Animal
+end
+
+class Mammal < Animal
+end
+
+class Reptile < Animal
+end
+```
+
+Here, the nouns of the problem domain have a clear hierarchical relationship. A `Mammal` 'is a' specific type of `Animal`. Thus class inheritance makes sense to model this relationship.
+
+Modules can be used to provide behaviors to classes. This is sometimes called 'interface inheritance'. A module used in this way is called a mixin module. A module is mixed in to a class via the `Module#include` method. Mixin modules are used to express 'has a' relationships. The class that mixes in a module 'has an' ability provided by the module.
+
+For instance,
+
+```ruby
+module Climbable
+  def climb
+    puts "I'm climbing"
+  end
+end
+
+class Cat
+  include Climbable
+end
+
+class Mountaineer
+  include Climbable
+end
+```
+
+Here, the entities in the problem domain have no obvious hierarchical relationship. There is no obvious common superclass to extract a shared behavior to. Yet both classes, `Cat` and `Mountaineer`, need access to a `climb` method. In this case, since we wish to express that both classes 'have an' ability to `climb`, extracting the behavior to a mixin module makes more sense.
+
+
+
+38.
+
+```ruby
+class Cat
+end
+
+whiskers = Cat.new
+ginger = Cat.new
+paws = Cat.new
+
+
+# If we use `==` to compare the individual `Cat` objects in the code above, will the return value be `true`? Why or why not? What does this demonstrate about classes and objects in Ruby, as well as the `==` method?
+```
+
+
+
+If we compare any two of the `Cat` objects in the given code using the `==` method, the return value will be `false`.
+
+The `==` operator is in actuality a method rather than a real operator. The conventional purpose of this method is to compare the principal value of two objects, returning `true` if the values are equivalent, `false` otherwise.
+
+Since `==` is a method, this means that we can define it for our own classes. The `Cat` class defined above (lines 1-2) does not define such a method. In this case, calling the `==` method on a `Cat` object will invoke the inherited `BasicObject#==` method.
+
+`BasicObject#==` is overridden by Ruby core classes such as String to compare the values of two objects for equivalence. `String#==` compares the principal value of two String objects for equivalence, which would be their string values. However, `BasicObject#==` itself uses as the principal value for comparison the object id of two objects. The object id of any given object is a unique value that identifies that object. Thus, comparing two different objects using this method will always return `false`.
+
+In order to provide a more meaningful semantic for our `Cat` class, we would need `Cat` to have some more meaningful value to compare. Then we could simply override the `==` method in `Cat` to compare those values for equivalence.
+
+For instance,
+
+```ruby
+class Cat
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+  
+  def ==(other)
+    name == other.name
+  end
+end
+
+cat1 = Cat.new("Fluffy")
+cat2 = Cat.new("Tom")
+cat3 = Cat.new("Tom")
+
+puts cat1 == cat2 # false
+puts cat2 == cat3 # true
+```
+
+10m39s
+
+
+
+39.
+
+```ruby
+class Thing
+end
+
+class AnotherThing < Thing
+end
+
+class SomethingElse < AnotherThing
+end
+
+
+# Describe the inheritance structure in the code above, and identify all the superclasses.
+```
+
+The `Thing` class is defined on lines 1-2. The `AnotherThing` class is defined on lines 4-5 as the subclass of `Thing`. `Thing` is thus the superclass of `AnotherThing`. The `SomethingElse` class is defined on lines 7-8 as the subclass of `AnotherThing`. `AnotherThing` is thus the superclass of `SomethingElse`.
+
+This is a class inheritance structure. A superclass is a superclass in relation to some other class. `Thing` is a superclass in relation to `AnotherThing`. `AnotherThing` is a superclass in relation to `SomethingElse`. `Thing` is an ancestor of `SomethingElse`, and in a looser sense could therefore be described as a superclass of `SomethingElse`. The implicit superclass of `Thing` is `Object`, since there is no explicit superclass given. `BasicObject` is the superclass of `Object` and the ancestor of all Ruby classes.
+
+4m50s
+
+
+
+40.
+
+```ruby
+module Flight
+  def fly; end
+end
+
+module Aquatic
+  def swim; end
+end
+
+module Migratory
+  def migrate; end
+end
+
+class Animal
+end
+
+class Bird < Animal
+end
+
+class Penguin < Bird
+  include Aquatic
+  include Migratory
+end
+
+pingu = Penguin.new
+pingu.fly
+
+
+# What is the method lookup path that Ruby will use as a result of the call to the `fly` method? Explain how we can verify this.
+```
+
+On line 25, we call the `fly` method on an object of the `Penguin` class.
+
+The method lookup path for this method call will begin with the class of the object, `Penguin`. Since Ruby does not find a method called `fly` in `Penguin`, it will next search the mixed in modules in the reverse order of the calls to `Module#include` that mixed them in. Ruby will thus search `Migratory` before `Aquatic`. Since there is no `fly` method in these modules, Ruby next searches the superclass, `Bird`. Ruby then searches the superclass of `Bird`, `Animal`. Since Ruby has still not found a `fly` method, it searches the superclass of `Bird`, `Object`. Ruby then searches the `Kernel` module, which `Object` includes, and then the superclass `BasicObject`. At this point, since the `fly` method is still not found, Ruby raises a `NoMethodError`.
+
+The full method lookup path for `Penguin` objects could be ascertained by calling the `Module#ancestors` method on the `Penguin` class, which would return `[Penguin, Migratory, Aquatic, Bird, Animal, Object, Kernel, BasicObject]`. We could do this starting from our `pingu` `Penguin` object by calling the `Kernel#class` method on `pingu` and chaining `ancestors` on the return value: `pingu.class.ancestors`
+
+There is a `fly` method defined on line 2 within the `Flight` module (lines 1-3). However, none of the ancestors of `Penguin` include this module. This is likely because a `Penguin` is a flightless bird and should not have access to this method.
+
+7m49s
+
+
+
+41.
+
+```ruby
+class Animal
+  def initialize(name)
+    @name = name
+  end
+
+  def speak
+    puts sound
+  end
+
+  def sound
+    "#{@name} says "
+  end
+end
+
+class Cow < Animal
+  def sound
+    super + "moooooooooooo!"
+  end
+end
+
+daisy = Cow.new("Daisy")
+daisy.speak
+
+
+# What does this code output and why?
+```
+
+The code will output `'Daisy says moooooooooooo!'`
+
+The reason for this has to do with class inheritance and the use of the `super` keyword. The `Cow` class (defined on lines 15-19) inherits most of its instance methods, including its constructor, from its superclass `Animal` class (lines 1-13).
+
+When we call the `speak` method on a `Cow` object `daisy` on line 22, we are calling the `speak` method defined in the `Animal` superclass. This method calls the `sound` method (line 7), the return value of which is passed to `Kernel#puts` to be output. The `sound` method called is the `Cow#sound` method, since this overrides the `Animal#sound` method definition in the superclass. The method lookup path for a method call in a method definition in the superclass will still be the method lookup path for `Cow`, not the lexically enclosing structure `Animal`.
+
+Ruby calls `Cow#sound`, defined on lines 16-18. However, on line 17 in the definition body, the first subexpression is the `super` keyword. This will call the next method of the same name further up the method lookup path, which is `Animal#sound` (lines 10-13). This superclass method returns a string `"Daisy says "` using the interpolated `@name` instance variable of the calling object, which is still the `Cow` `daisy` object. Back in `Cow#sound` we concatenate the string `"moooooooooooo!"` to the superclass method return value and return the new string.
+
+Back in the `speak` method this string return value is passed to `Kernel#puts` and output to screen: `'Daisy says moooooooooooo!'`
+
+10m32s
+
+
+
+42.
+
+```ruby
+class Cat
+  def initialize(name, coloring)
+    @name = name
+    @coloring = coloring
+  end
+
+  def purr; end
+
+  def jump; end
+
+  def sleep; end
+
+  def eat; end
+end
+
+max = Cat.new("Max", "tabby")
+molly = Cat.new("Molly", "gray")
+
+
+# Do `molly` and `max` have the same states and behaviors in the code above? Explain why or why not, and what this demonstrates about objects in Ruby.
+```
+
+On lines 1-14 we define a `Cat` class. On line 16, we initialize local variable `max` to a new `Cat` object, passing strings `"Max"` and `"tabby"` to the `Cat::new` method to be passed through to the `Cat#initialize` constructor.
+
+On line 17, we initialize local variable `molly` to another new `Cat` object, passing `"Molly"` and `"gray"` through to the constructor.
+
+The `Cat#initialize` method is defined on lines 2-5. It initializes instance variable `@name` to the first argument, and instance variable `@coloring` to the second. For our first `Cat` object, `@name` will be set to `"Max"`, and for our second `Cat` object, it will be set to `"Molly"`. For the first `Cat`, `@coloring` will be set to `"tabby"`, and for the second, `"gray"`.
+
+Both `Cat` objects have a `@name` instance variable, but the `@name` instance variables in each object are separate variables (which are also pointing to different String objects). The same goes for the two objects' `@coloring` variables. This is because Ruby objects encapsulate state. Each Ruby object has its own unique state, tracked by its individual instance variables.
+
+This is despite the fact that Ruby classes group methods and all objects of the class share access to the instance methods defined in the class. When the shared `Cat#initialize` instance method initializes an instance variable, it does so in the scope of the calling object. So the implicit call to `Cat#initialize` on line 16 initializes instance variables in calling object `max`, and the call on line 17 initializes instance variables in calling object `molly`.
+
+This code demonstrates that the behaviors of an object, the instance methods grouped by its class, are shared with all the other objects of that class, but the state of each object is individual to that object, and not shared with any other object of the class. `molly` and `max` have the same behaviors but not the same states.
+
+11m28s
+
+
+
+43.
+
+```ruby
+class Student
+  attr_accessor :name, :grade
+
+  def initialize(name)
+    @name = name
+    @grade = nil
+  end
+  
+  def change_grade(new_grade)
+    grade = new_grade
+  end
+end
+
+priya = Student.new("Priya")
+priya.change_grade('A')
+priya.grade 
+
+
+# In the above code snippet, we want to return `”A”`. What is actually returned and why? How could we adjust the code to produce the desired result?
+```
+
+We define our `Student` class over lines 1-12. The `Student#initialize` constructor is defined (lines 4-7) with one parameter `name`. The method body sets instance variable `@name` to `name`, and instance variable `@grade` to `nil`. We generate getter and setter instance methods for `@name` and `@grade` with a call to `Module#attr_accessor` on line 2.
+
+The problem with this code lies in the `Student#change_grade` method defined on lines 9-11. The method has one parameter `new_grade`. The method body seems intended to set `@grade` to `new_grade` with an attempt to call the `grade=` setter method. However, the syntax used `grade = new_grade` actually initializes a new local variable `grade` to `new_grade`. This local variable ceases to exist as soon as the method returns.
+
+This is why, when we instantiate a new `Student` object to which we assign local variable `priya`, on line 14, and then call `change_grade` with string `'A'` passed as argument, on line 15, the value of the `grade` attribute does not change, and is why line 16's call to `priya.grade` currently returns `nil`.
+
+When a method is called within an instance method definition within a class, the implicit caller is the calling object, referenced by `self`. To disambiguate calling a setter method from initializing a new local variable with the same name as the attribute, we must explicitly call the setter method on `self`.
+
+So in order to make the above code return `"A"`, we must change line 10 to `self.grade = new_grade`.
+
+10m35s
+
+
+
+44.
+
+```ruby
+class MeMyselfAndI
+  self
+
+  def self.me
+    self
+  end
+
+  def myself
+    self
+  end
+end
+
+i = MeMyselfAndI.new
+
+
+# What does each `self` refer to in the above code snippet?
+```
+
+We define a `MeMyselfAndI` class over lines 1-11.
+
+The keyword `self` on line 2 references the class. This is because the context is within the class but outside of an instance method definition.
+
+The keyword `self` on line 4 also references the class, for the same reason as above. Here, we prepend the name of the method `me` with `self` and the dot operator in order to define a class method on the class, `MeMyselfAndI`. Within the class method definition, on line 5, `self` references the class on which the class method has been called. As the code is written, this will be `MeMyselfAndI`, but if the class had a subclass, it could reference the subclass if the inherited class method is called on the subclass (and the same goes for any descendant classes).
+
+`self` on line 9 references the calling object (instance) because the context here is the definition of an instance method, `MeMyselfAndI#myself`. `self` refers here to the instance of `MeMyselfAndI` on which the `myself` has currently been called.
+
+8m17s
+
+
+
+45.
+
+```ruby
+class Student
+  attr_accessor :grade
+
+  def initialize(name, grade=nil)
+    @name = name
+  end 
+end
+
+ade = Student.new('Adewale')
+p ade # => #<Student:0x00000002a88ef8 @grade=nil, @name="Adewale">
+
+
+# Running the following code will not produce the output shown on the last line. Why not? What would we need to change, and what does this demonstrate about instance variables?
+```
+
+We define a `Student` class over lines 1-7. The `Student#initialize` constructor method is defined (on lines 4-6) with two parameters `name` and `grade`, with the latter having a default value of `nil`. Within the body of the constructor, instance variable `@name` is set to `name`.  We generate getter and setter methods for `@grade` with a call to `Module#attr_accessor` on line 2, but the constructor fails to initialize the `@grade` instance variable.
+
+Thus when we instantiate a new `Student` object on line 9, and then immediately pass it to the `Kernel#p` method on line 10, the output shows that the object has no `@grade` instance variable.
+
+This is because instance variables are only created once an instance method has initialized them. Here, we have not called `Student#grade=` to set the variable, nor does `Student#initialize` set this variable.
+
+To remedy this and produce the expected output from our code, we could simply add a line to `Student#initialize` setting `@grade` to parameter `grade`, whose default value is already `nil`:
+
+```ruby
+class Student
+  attr_accessor :grade
+
+  def initialize(name, grade=nil)
+    @name = name
+    @grade = grade
+  end 
+end
+
+ade = Student.new('Adewale')
+p ade # => #<Student:0x00000002a88ef8 @grade=nil, @name="Adewale">
+```
+
+7m01s
+
+
+
+46.
+
+```ruby
+class Character
+  attr_accessor :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def speak
+    "#{@name} is speaking."
+  end
+end
+
+class Knight < Character
+  def name
+    "Sir " + super
+  end
+end
+
+sir_gallant = Knight.new("Gallant")
+p sir_gallant.name 
+p sir_gallant.speak 
+
+
+# What is output and returned, and why? What would we need to change so that the last line outputs `”Sir Gallant is speaking.”`? 
+```
+
+The output of this code will be
+
+```
+Sir Gallant
+Gallant is speaking
+```
+
+The `Character` class is defined on lines 1-11. We generate getter and setter methods for a `@name` instance variable on line 2 with a call to `Module#attr_accessor`. The `Character#initialize` constructor method is defined on lines 4-6 with one parameter `name`. The body of the definition sets `@name` to `name`.
+
+The `Character#speak` method is defined on lines 8-10. The method returns a string with `@name` interpolated into it.
+
+The `Knight` class is defined on lines 13-17 as a subclass of `Character`. The `Knight` class overrides the `name` getter method on lines 14-16. The body of the definition concatenates the string `"Sir "` to the return value of calling the superclass `name` method, `Character#name`, using the `super` keyword.
+
+This is why, when we call `name` on a `Knight` object, `sir_gallant`, on line 21, whose constructor was passed the string `"Gallant"` to which it initialized the `@name` variable, the return value passed to `Kernel#p` is `"Sir Gallant"`.
+
+Calling the `speak` method on `sir_gallant` on line 21 calls the `Character#speak` method. This simply interpolates the `sir_gallant` `@name` variable into a string and returns it. The `name` getter is never called. This is why the return value passed to `p` is `"Gallant is speaking"`.
+
+In order to remedy this, so that the last line outputs `"Sir Gallant is speaking"`, we need to change line 9 (the `Character#speak` method) to call the `name` getter rather than referencing `@name` directly:
+
+```ruby
+class Character
+  attr_accessor :name
+
+  def initialize(name)
+    @name = name
+  end
+
+  def speak
+    "#{name} is speaking."
+  end
+end
+
+class Knight < Character
+  def name
+    "Sir " + super
+  end
+end
+
+sir_gallant = Knight.new("Gallant")
+p sir_gallant.name 
+p sir_gallant.speak # "Sir Gallant is speaking."
+```
+
+10m56s
+
+
+
+47.
+
+```ruby
+class FarmAnimal
+  def speak
+    "#{self} says "
+  end
+end
+
+class Sheep < FarmAnimal
+  def speak
+    super + "baa!"
+  end
+end
+
+class Lamb < Sheep
+  def speak
+    super + "baaaaaaa!"
+  end
+end
+
+class Cow < FarmAnimal
+  def speak
+    super + "mooooooo!"
+  end
+end
+
+p Sheep.new.speak
+p Lamb.new.speak
+p Cow.new.speak 
+
+
+# What is output and why? 
+```
+
+On lines 25-27, we instantiate new `Sheep`, `Lamb`, and `Cow` objects, and call `speak` on each object in turn, passing each return value in turn to the `Kernel#p` method to be output to screen.
+
+The output will be something like
+
+```
+"#<Sheep:0x00007fa2cd1b9e10> says baa!"
+"#<Lamb:0x00007fa2cd1b9a00> says baa!baaaaaaa!"
+"#<Cow:0x00007fa2cd1b97d0> says mooooooo!"
+```
+
+though the object ids will vary.
+
+All three of these classes are descendants of the `FarmAnimal` class defined on lines 1-5.
+
+The `FarmAnimal#speak` method, inherited by all three descendant classes, is defined on lines 2-5. The method returns a string with the calling object interpolated into it using the keyword `self`: `"#{self} says "`. String interpolation implicitly calls the `to_s` method on the calling object in order to interpolate a string representation. Since none of our classes override `to_s`, the `Object#to_s` method will be called. This method returns a string in the format `<ClassName:0x...>` where `ClassName` is the name of the object's class, and `0x...` is an encoding of the object id.
+
+The `Sheep` class (lines 7-11) subclasses `FarmAnimal` and overrides `FarmAnimal#speak`. However, it calls the superclass method via the `super` keyword before concatenating the return value to the string `"baa!"`.
+
+The `Lamb` class (lines 13-17) subclasses `Sheep` and overrides the `Sheep#speak` method. Again, it calls the superclass method using the `super` keyword (which in turn calls the `FarmAnimal#speak` method using `super`) before concatenating the return value to the string `"baaaaaaa!"`.
+
+The `Cow` class (lines 19-23) subclasses `FarmAnimal` and overrides the `speak` method in a similar fashion to `Sheep`, except the string that the superclass method's return value is concatenated to is `"mooooooo!"`.
+
+This code thus demonstrates the use of the `self` keyword to reference the calling object in an instance method definition, Ruby's string interpolation's implicit use of the `to_s` method, and the `super` keyword that calls a method with the same name further up the method lookup path.
+
+10m53s
+
+
+
+48.
+
+```ruby
+class Person
+  def initialize(name)
+    @name = name
+  end
+end
+
+class Cat
+  def initialize(name, owner)
+    @name = name
+    @owner = owner
+  end
+end
+
+sara = Person.new("Sara")
+fluffy = Cat.new("Fluffy", sara)
+
+
+# What are the collaborator objects in the above code snippet, and what makes them collaborator objects?
+```
+
+A collaborator object is an object that becomes part of another object's state.
+
+In the above code, we define a `Person` class on lines 1-5. The constructor method `Person#initialize` is defined on lines 2-4 with one parameter `name`. The method sets instance variable `@name` to the object referenced by `name`. At this point, the `name` object becomes part of the state of our new `Person` object, and can thus be considered a collaborator object.
+
+On line 14, we initialize local variable `sara` to a new `Person`, passing in the string `"Sara"` to the constructor via the `new` class method. Therefore, the String object `"Sara"` is a collaborator of `Person` object `sara`.
+
+The `Cat` class is defined on lines 7-12. The `Cat#initialize` method has two parameters `name` and `owner`. The method initializes the instance variables `@name` and `@owner` to the appropriate parameters. Therefore, objects passed to the `Cat::new` class method and passed through to `initialize` become collaborator objects of the new `Cat` object.
+
+On line 15, we initialize local variable `fluffy` to a new `Cat` object, passing in the string `"Fluffy"` and the `sara` `Person` object. Thus, the String object `"Fluffy"` and the `Person` object `sara` become collaborators of `fluffy`.
+
+7m12s
+
+
+
+49.
+
+```ruby
+number = 42
+
+case number
+when 1          then 'first'
+when 10, 20, 30 then 'second'
+when 40..49     then 'third'
+end
+
+
+# What methods does this `case` statement use to determine which `when` clause is executed?
+```
+
+Each `when` clause in a `case` statement implicitly calls the `===` method of the class of the object that follows the `when` keyword.
+
+The `===` operator method is conventionally defined to test whether the argument is part of a group defined by the calling object.
+
+On line 1, we initialize local variable `number` to the integer `42`. 
+
+On line 4, the object that follows the `when` keyword is the integer `1`. Thus the `Integer#===` method is called with the argument to the `case` keyword, `number`, passed as argument. `Integer#===` returns `false` since `42` is not the integer `1`.
+
+On line 5, the objects following `when` are integers, separated by the comma operator. In this context, the commas act similarly to logical OR. So that the clause
+
+```ruby
+when 10, 20, 30
+```
+
+is equivalent to
+
+```ruby
+elsif 10 === 42 || 20 === 42 || 30 === 42
+```
+
+Again, we are implicitly calling `Integer#===`. The return value of these implicit calls will be `false` since `42` is not `10` or `20` or `30`.
+
+On line 6, the calling object will be `40..49`, so `Range#===` will be called with `42` passed as argument. This will return `true`, since `42` is a member of the Range, and so our `case` statement returns `"third"`.
+
+8m22s
+
+
+
+50.
+
+```ruby
+class Person
+  TITLES = ['Mr', 'Mrs', 'Ms', 'Dr']
+
+  @@total_people = 0
+
+  def initialize(name)
+    @name = name
+  end
+
+  def age
+    @age
+  end
+end
+
+# What are the scopes of each of the different variables in the above code?
+```
+
+We define a `Person` class over lines 1-13. On line 2, `TITLES` is a constant variable (or just a constant, since once initialized, it should not be reassigned or Ruby will output a warning). Constants have lexical scope. `TITLES` will be available to be referenced within the lexical structure in which it is defined, here the `Person` class, and within any modules or classes lexically nested within the structure (if we were to add nested modules or classes to `Person`). `TITLES` can also be referenced via the `::` namespace resolution operator from anywhere in our code: `Person::TITLES`. If we were to define subclasses of `Person`, Ruby  would be able to find `TITLES` in the inheritance part of the constant resolution search provided that the method that referenced the constant were located lexically in one of the descendant classes.
+
+The `@@total_people` variable on line 4 is a class variable. Class variables are scoped at the level of the class and any descendant classes, including instances of all classes. Since `Person` has no descendants, the scope of `@@total_people` is the `Person` class and its instances.
+
+The `@age` variable on line 11 is an instance variable. Instance variables are scoped at the object level. Instances of `Person` can access `@age` (in instance methods) but not the `Person` class itself (or its class methods).
+
+12m00s
+
+
+
+51.
+
+```ruby
+# The following is a short description of an application that lets a customer place an order for a meal:
+
+# - A meal always has three meal items: a burger, a side, and drink.
+# - For each meal item, the customer must choose an option.
+# - The application must compute the total cost of the order.
+
+# 1. Identify the nouns and verbs we need in order to model our classes and methods.
+# 2. Create an outline in code (a spike) of the structure of this application.
+# 3. Place methods in the appropriate classes to correspond with various verbs.
+
+=begin
+
+nouns/verbs
+--
+
+application MealOrderApplication (orchestration engine class)
+-compute_total_cost
+
+customer
+-place_order
+-choose_option
+
+order/meal has:
+item (module containing shared logic for burger, side, drink choice)
+
+burger
+-choose
+side
+-choose
+drink
+-choose
+
+So,the MealOrderApp could have some kind of loop
+where it is creating a new Customer, letting the Customer place_order
+and then compute_total_cost of order
+
+In terms of the conceptual logic, the Customer chooses the option
+for a Burger item. However, should the Customer know the logic for the
+choices? Shouldn't the Burger object encapsulate the selected option,
+and therefore the logic for choosing the option?
+=end
+
+
+```
+
+Come back to this with other spikes
+
+52.
+
+```ruby
+class Cat
+  attr_accessor :type, :age
+
+  def initialize(type)
+    @type = type
+    @age  = 0
+  end
+
+  def make_one_year_older
+    self.age += 1
+  end
+end
+
+
+# In the `make_one_year_older` method we have used `self`. What is another way we could write this method so we don't have to use the `self` prefix? Which use case would be preferred according to best practices in Ruby, and why?
+```
+
+We define a `Cat` class over lines 1-12. The `Cat#initialize` method is defined with one parameter `type`, which the method body uses to initialize instance variable `@type` on line 5. On line 6, the `@age` instance variable is initialized to `0`.
+
+The `Cat#make_one_year_older` method is defined on lines 9-11. The body of the method consists of incrementing the instance variable `@age` using the call to the setter method `age=`, which was generated by the call to `Module#attr_accessor` on line 2, and the `+=` operator as syntactic sugar: `self.age += 1`.
+
+Setter methods like `age=` need to be explicitly called on `self`, referencing the calling object, in order to disambiguate the setter method call from the initialization of a new local variable, which here would be named `age`. So if we wanted to avoid using the `self.` prefix, we would need to reassign the instance variable `@age` directly:
+
+```ruby
+class Cat
+  attr_accessor :type, :age
+
+  def initialize(type)
+    @type = type
+    @age  = 0
+  end
+
+  def make_one_year_older
+    @age += 1
+  end
+end
+```
+
+Although this works, it is generally considered good practice to use setter methods within the class rather than accessing instance variables directly. This allows us to separate the actual setting of the variable from the places in our class where the change is state is actually made. This allows us to change the code that deals with setting the instance variable in one place, the setter method, rather than in every place that the variable is set. This code reuse reduces the likelihood of error and allows eliminates dependency on the object representation. Even when we have a simple setter method like our example, we may wish to add more complicated logic at a future time, and it is much simpler to do so if we consistently use the setter method throughout our class, since the change only needs to be made in one place and will not break our existing code.
+
+10m03s
+
+53.
+
+```ruby
+module Drivable
+  def self.drive
+  end
+end
+
+class Car
+  include Drivable
+end
+
+bobs_car = Car.new
+bobs_car.drive
+
+
+# What is output and why? What does this demonstrate about how methods need to be defined in modules, and why?
+```
+
+
+
+Line 12 in the above code will raise a `NoMethodError`. This is because we have attempted to call the `drive` method on a `Car` object rather than the `Drivable` module itself.
+
+The `Driveable` modules is defined on lines 1-4. When the keyword `self` is used on line 2, this references the `Driveble` module. Thus `def self.drive` defines a method on the module itself, which can only be called on the module.
+
+When we simply define a method in a module (e.g. `def drive`), we are defining methods that can be used as instance methods if the module is mixed in to a class. However, modules can also be used as containers for methods that cannot be called on instances, and which offer functionality that does not pertain to the state of any instance of a class. These are sometimes called 'module methods'. Module methods are defined on the module, as on line 2. When a module is mixed into a class, as `Drivable` is on line 7 in the `Car` class, module methods will not be made available to instances of the class.
+
+This is why we receive a `NoMethodError` on line 11.
+
+To remedy this, we could make `drive` an instance method by leaving out the `self.` prefix:
+
+```ruby
+module Drivable
+  def drive
+  end
+end
+
+class Car
+  include Drivable
+end
+
+bobs_car = Car.new
+bobs_car.drive # fine
+```
+
+Alternatively, we could invoke `drive` on `Driveable` instead of on a `Car` object:
+
+```ruby
+module Drivable
+  def self.drive
+  end
+end
+
+class Car
+  include Drivable
+end
+
+bobs_car = Car.new
+Drivable.drive
+```
+
+10m51s
+
+
+
+54.
+
+```ruby
+class House
+  attr_reader :price
+
+  def initialize(price)
+    @price = price
+  end
+end
+
+home1 = House.new(100_000)
+home2 = House.new(150_000)
+puts "Home 1 is cheaper" if home1 < home2 # => Home 1 is cheaper
+puts "Home 2 is more expensive" if home2 > home1 # => Home 2 is more expensive
+
+
+# What module/method could we add to the above code snippet to output the desired output on the last 2 lines, and why?
+```
+
+
+
+The conditional of the `if` modifier on line 11 attempts to call the method `House#<`. Since no such method is defined, this will raise a `NoMethodError`. Likewise, line 12 attempts to call `House#>`, raising the same exception.
+
+Both `<` and `>` are methods in Ruby rather than true operators. As such, they can be defining in our custom classes. Conventionally, they are defined to compare the object value that is logically the most significant or representative value in the object's state.
+
+Defining these comparison methods for `House` would be straightforward, since `House` objects only track one attribute, `price`. The `@price` instance variable is set to the argument passed to the constructor, on line 5. When we instantiate our `House` objects on lines 9-10, we pass integers to the `House::new` method, which passes them through to the `initialize` constructor. Our `House` class also defines a getter method for `@price` on line 2 with a call to `Module#attr_reader`.
+
+Thus our comparison methods simply need to compare the `price` of the calling `House` object with the `price` of a `House` object passed as argument, using the `Integer#<` and `Integer#>` methods to compare the integers themselves.
+
+```ruby
+class House
+  attr_reader :price
+
+  def initialize(price)
+    @price = price
+  end
+  
+  def >(other)
+    price > other.price
+  end
+  
+  def <(other)
+    price < other.price
+  end
+end
+
+home1 = House.new(100_000)
+home2 = House.new(150_000)
+puts "Home 1 is cheaper" if home1 < home2 # => Home 1 is cheaper
+puts "Home 2 is more expensive" if home2 > home1 # => Home 2 is more expensive
+```
+
+8m17s
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
