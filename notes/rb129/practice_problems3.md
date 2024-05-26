@@ -1844,21 +1844,63 @@ flyers.each { |flyer| flyer.fly }
 # What is encapsulation, and why is it important in Ruby? Give an example.
 ```
 
-Encapsulation is sectioning off areas of code and data from the rest of the codebase behind a consistent public interface.
+LS have added as section to the 'Encapsulation' section at the beginning of the OOP book. Now it says:
 
-In Ruby, encapsulation is achieved by defining classes and instantiating objects. Client code can only interact with objects via their public interface: the public instance methods determined by the class.
+"**Encapsulation** is one of the fundamental concepts of object-oriented programming. At its core, encapsulation describes the idea of bundling or combining the data and the operations that work on that data into a single entity, e.g., an object."
+
+"... the data and operations that you perform on your data are related"
+
+"If our program keeps track of data bout entities and performs operations on that data, it makes sense to combine the data and the functionality into a single entity. That's what object-oriented programming is all about. We call this principle of combining data and the operations relevant to that data encapsulation. Encapsulation is about bundling state (data) and behavior (operations) to form an object."
+
+"In most OOP languages, encapsulation has a broader purpose. It also refers to restricting access to the state and certain behaviors; an object only exposes the data and behaviors that other parts of the application need to work. In other words, objects expose a **public interface** for interacting with other objects and keep their implementation details hidden. Thus, other objects can't change the data of an object without going through the proper interface."
+
+
+
+Encapsulation is a fundamental aspect of OOP. Encapsulation means bundling data with the operations that work on the data into a single entity: an object. This means that operations can only be performed on the relevant data, and data is prevented from having invalid operations (relating to some other type of data) performed on it. In this way, encapsulation is about packaging state and behavior to form an object.
+
+Encapsulation means sectioning off functionality from the rest of the codebase behind a consistent public interface. In Ruby, encapsulation is achieved by defining classes and instantiating objects. Client code can only interact with objects via their public interface: the public instance methods determined by the class of the object.
 
 Objects encapsulate state, which is tracked by their instance variables. An object's set of instance variables is distinct to that object, and the state they track is separate from all other objects' state. In Ruby, the instance variables of an object are only accessible from outside the object, if at all, via deliberately exposed public methods. Encapsulation thus serves as a form of data protection, preventing accidental or invalidating modification of an object's state by restricting access to it behind the public interface, limiting the ways in which an object's state can be changed.
 
-We can have more fine-grained control over which methods comprise the consistent public interface, and which remain implementation details that cannot be called from outside the class, through method access control. The `public` methods of a class form the public interface, while `private` and `protected` methods can only be called within the class. `private` methods can only be called by other instance methods on the calling object. `protected` methods can only be called within the class on objects of the class.
+Method access control gives us fine-grained control over which methods comprise the public interface, and which remain internal implementation details that cannot be called from outside the class. The `public` methods of a class form the public interface, while `private` and `protected` methods can only be called within the class. `private` methods can only be called by other instance methods on the calling object. `protected` methods can only be called by other instance methods of the class on objects of the class, usually on other objects of the class that have been passed as argument to a `public` method.
 
 Since client code can only become dependent on the public interface of a class, we are free to change or add to a class and we will not break existing code so long as the interface remains consistent. This reduction in code dependencies greatly improves the maintainability of our programs.
 
 The public interface simplifies use of the class, allowing us to think at a greater level of abstraction, the level of the problem domain itself, rather than at the level of implementation details. This helps us solve more complex problems.
 
+As an example,
 
+```ruby
+class Cat
+  attr_reader :name
+  
+  def initialize(name)
+    @name = name
+  end
+  
+  def change_name(new_name)
+    self.name = new_name
+  end
+  
+  def speak
+    puts "#{name} says meow!"
+  end
+  
+  private
+  
+  attr_writer :name
+end
 
-Got to think of a good example.
+cat = Cat.new("Fluffy")
+cat.change_name("Tom")
+cat.speak # "Tom says meow!"
+```
+
+Here, we create a `Cat` class, whose public interface consists of the `Cat#name` method, the `Cat#change_name` method, and the `Cat#speak` method. We also need to pass a `name` through to the constructor when we instantiate a `Cat` object. We do not need to know how the `name` is stored, and we can only access the `@name` instance variable indirectly through the public interface. We do not need to know such a variable exists in order to use the class.
+
+In order to change the `name` of the `Cat` object, we must go through the `Cat#change_name` method. This method calls the `private` setter method `Cat#name=`, but we cannot call this `private` method from outside the object; it remains an implementation detail rather than part of the interface. We could change the body of any of these methods, and remove the `Cat#name=` method altogether, and so long as the interface remains constant and the behavior remains consistent, we will not break existing code.
+
+Similarly, when we ask a `Cat` object to `speak`, it outputs a message from our `Cat` using the state of the individual object, but we do not need to know how this is achieved.
 
 
 
@@ -1913,6 +1955,26 @@ p kitty.walk
 # What is returned/output in the code? Why did it make more sense to use a module as a mixin vs. defining a parent class and using class inheritance?
 ```
 
+On lines 1-5, we define a `Walkable` module. On lines 7-21, we defined a `Person` class. On lines 23-37 we define a `Cat` class. Both `Person` and `Cat` mix in the `Walkable` module.
+
+On line 39, we initialize local variable `mike` to a new `Person` object. We call the `walk` method, inherited from `Walkable`, on `mike` and pass the return value to `Kernel#p`  to be output: `"Mike strolls forward"`.
+
+On line 42, we initialize local variable `kitty` to a new `Cat` object. On line 43, we call `walk`, inherited from the `Walkable` module, on `kitty` and pass the return value to `p` to be output: `"Kitty saunters forward"`.
+
+The `walk` method, defined on lines 2-4, returns a string into which it interpolates the return values of `name` and `gait` methods: `"#{name} #{gait} forward"`. When called on a `Person` object, these will be `Person#name` and `Person#gait`. When called on a `Cat` object, `Cat#name` and `Cat#gait`. Since both classes implement the methods the `walk` method expects, this method works seamlessly for both `mike` and `kitty`. `Cat#gait` returns the string `"saunters"` and `Person#gait` returns `"strolls"`. The `name` attribute of both classes is set by the constructor, using a `@name` instance variable.
+
+This is why this code produces the output it does.
+
+The reason it makes sense to use a mixin module, `Walkable`, rather than class inheritance has to do with the entities our classes are modeling. There is no logical superclass of which a `Person` and a `Cat` could be subclasses of. That is to say, there is no mutual `is-a` relationship whereby a `Person` and a `Cat` are a specialized type of a more general type of entity.
+
+Rather, a `Person` 'has-an' ability to `walk`, as does a `Cat`, so a mixin module models this more clearly and logically.
+
+10m29s
+
+
+
+
+
 
 
 35.
@@ -1921,6 +1983,76 @@ p kitty.walk
 # What is Object Oriented Programming, and why was it created? What are the benefits of OOP, and examples of problems it solves?
 ```
 
+Object Oriented Programming is a programming paradigm developed to solve the problems of large, complex software projects. OOP aims to make code more maintainable, to permit code reuse in a greater variety of contexts, and to allow the programmer to think at a higher level of abstraction and so to solve more complex problems in terms of the problem domain itself.
+
+Before OOP, as programs grew in size and complexity there was a tendency for a program to become a mass of dependency, where every part of the codebase was dependent on every other part. This made it hard to change code or add features without a ripple of adverse effects throughout the program.
+
+OOP offers ways to modularize programs, to create containers for data that can be changed without affecting every other part of the program, ways to section off code and data behind consistent interfaces, so that programs become the interaction of small, discrete actors, rather than a single mass of dependency.
+
+By abstracting away implementation details behind interfaces, OOP allows us to think in terms of the problem domain. OOP objects can represent real-world objects or problem-domain entities, allowing the programmer to think at a higher level of abstraction. This facilitates solving more complex problems.
+
+OO languages provide facilities for encapsulation, polymorphism, and inheritance, in order to achieve these ends.
+
+6m08s
+
+36.
+
+```ruby
+# What is the relationship between classes and objects in Ruby?
+```
+
+In Ruby, classes serve as templates or blueprints for objects.
+
+Objects encapsulate state, while classes group behaviors. The state of an object is unique to that object, and is tracked by the instance variables of that object. An object's instance variables are particular to that object, distinct from the instance variables of all other objects including objects of the same class.
+
+Classes group behaviors, shared by all objects of the class. Specifically, the instance methods predetermined by the class are available on all objects of the class.
+
+An instance variable is only initialized in an object when the instance method that initializes it is called on the object. Although an instance method is shared by all objects of the class that defines it, the instance variable it initializes will be scoped at the level of the calling object and is unique to that object.
+
+As an example,
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def name
+    @name
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+tom = Cat.new("Tom")
+
+puts fluffy.name # "Fluffy"
+puts tom.name # "Tom"
+```
+
+Here, we can see that the `Cat` class groups behaviors for `Cat` objects. As lines 14-15 make clear, however, each `Cat` object has its own state, reflected in the different return values for `Cat#name` instance method.
+
+A class determines what instance methods are available to be called on objects of the class. Those instance methods determine the set of potential instance variables that can be initialized in an object. However, any given instance variables is only initialized if the instance method that initializes it is actually called on a particular object.
+
+So a class defines what an object can do and what it is made of. The second part is ambiguous though. A class predetermines a potential set of instance variables that an object may have. Any given instance variable is only initialized in a given object if the instance method that initializes it is actually called on that object.
+
+This is covered in the Objects and Classes material in the book, and in the exercises/"lecture" in Lesson 2. It's not that deep.
+
+
+
+A class functions as a blueprint or template for objects.
+
+An object's class predetermines the attributes and behaviors of an object (sort of depends what we mean by 'attributes')
+
+An object's class predetermines the behaviors and attributes of an object. 
+
+An 'attribute' is not exactly synonymous with an instance variable here, since any given instance variable is only initialized in an object if the instance method that initializes an instance variable of that name is actually called on the object.
+
+Does this matter in terms of the 'relationship' between classes and objects?
+
+"Ruby defines the attributes and behaviors of its objects in **classes**. You can think of classes as basic outlines of what an object should be made of and what it should be able to do."
+
+"So when we say that classes define the attributes of its objects, we're referring to how classes specify the names of instance variables each object should have (i.e., what the object should be made of ). The classes also define the accessor methods (and level of method access control); however, we're generally just pointing to the instance variables. Similarly, when we say state tracks attributes for individual objects, our purpose is to say that an object's state is composed of instance variables and their values; here, we're not referring to the getters and setters."
+
 
 
 36.
@@ -1928,6 +2060,86 @@ p kitty.walk
 ```ruby
 # What is the relationship between classes and objects in Ruby?
 ```
+
+Classes serve as blueprints or templates for objects. A class predetermines what attributes and behaviors an object should have: what an object should be made of and what it should be able to do.
+
+Classes group behaviors, instance methods, that are available to be called on all objects of the class.
+
+The attributes of an object, its potential instance variables, are predetermined by the class. Any given instance variable only comes into being in an object when an instance method that initializes it is actually called on the object. The instance methods available to an object, and thus the set of potential instance variables, are predetermined by the class.
+
+Objects encapsulate state, tracked by their instance variables. The state of an object, and its set of actual instance variables, is distinct and particular to that object, and not shared by any other object, even objects of the same class.
+
+Creating an object from a class is called instantiation, and for custom classes this is usually done by calling the class method `new` on the class. This in turn calls the `initialize` constructor, a private instance method, which receives all the arguments passed to `new`.
+
+For example,
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def name
+    @name
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+tom = Cat.new("Tom")
+
+puts fluffy.name # "Fluffy"
+puts tom.name # "Tom"
+```
+
+Here, we define a `Cat` class (lines 1-9) which defines what behaviors objects of the class should have (the instance methods `Cat#initialize` and `Cat#name`) and what attributes they should have (the name tracked by the `@name` instance variable initialized by the constructor). The two `Cat` objects instantiated on lines 11-12 have access to the same methods, but each has its own `@name` instance variable. As we can see from the output on lines 14-15, each object's instance variable tracks a different string.
+
+
+
+13m38s
+
+
+
+36.
+
+```ruby
+# What is the relationship between classes and objects in Ruby?
+```
+
+In Ruby, classes serve as templates or blueprints for objects. The class predetermines the attributes and behaviors of its objects: what the objects should be made of and what they should be able to do.
+
+Classes group behaviors, the instance methods that are available to its objects. These behaviors are shared by all objects of the class.
+
+Classes predetermine attributes for objects of the class, specifically the set of potential instance variables that can be initialized in objects of the class. Any given instance variable is only initialized in an object when the instance method that initializes it is actually called on that object, and a class predetermines what instance methods are available to an object.
+
+Objects encapsulate state, tracked by their instance variables. An object's state, the set of actual instance variables initialized in the object, is unique to that object, distinct from the state of every other object, including objects of the same class.
+
+Creating an object from a class is called 'instantiation'; objects are instances of the class that encapsulate their own distinct state. For custom classes, we usually instantiate an object by calling the class method `new`. This method in turn calls the private instance method `initialize`, the constructor, passing all arguments through to `initialize`.
+
+For example,
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def name
+    @name
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+tom = Cat.new("Tom")
+
+puts fluffy.name # "Fluffy"
+puts tom.name # "Tom"
+```
+
+Here we define a `Cat` class that determines what behavior is available to objects of the `Cat` class (i.e. the instance methods `Cat#initialize` and `Cat#name`). The `name` attribute is tracked by a `@name` instance variable initialized by the constructor when a new `Cat` is instantiated.
+
+We instantiate two new `Cat` objects on lines 11-12. As we can see from the return value of the `name` method called on both objects on lines 14-15, each `Cat` has its own distinct `@name` instance variable tracking its own distinct state. 
+
+
 
 
 
