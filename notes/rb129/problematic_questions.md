@@ -1,10 +1,8 @@
-q3 - very long question, could practice structuring reply, split it into multiple questions?
+q3 - I do not see a way to describe 'why' what is output in detail, and answer the two questions on top of it in much less than 15 minutes. The code is just too complicated and the constant resolution question just requires so much detail in response (including stuff about namespaced constant resolution that is not mentioned in the material)
 
-q4 - again just a long and awkward question to answer
+q4 - again just a long and awkward question to answer. Can be done in around 10 minutes. Would be difficult to do in much less.
 
-q7 - Found this awkward
-
-q12 - A kind of scattered, unclear grouping of example/question. Is the idea here that the Array is technically a collaborator but we should focus on the objects of custom classes that are stored in the array? Took me just under 11 mins and a lot of it was just describing an overly elaborate example that doesn't seem to demonstrate anything very clear about the LS material. Not sure it's worth bothering with this one again
+q12 - Definitely don't bother with this again
 
 q12 - took a long time to answer
 
@@ -29,3 +27,9 @@ q34 - took a long time to answer, very awkward, is it even asking for an explana
 q35 - What is OOP? Remember that OOP is partly about allowing us to think at a greater level of abstraction
 
 q36 - got confused, didn't know how to answer, I think this is actually a more basic question than I think, judging from the question-links document's link on this. It's literally just a single bullet point in the Summary for lesson 2.
+
+q43 - took a long time
+
+q47 - took a long time, probably a bad question tbh as it just takes a long time to describe all these classes. Maybe change to a less detailed approach?
+
+q50 - took a very long time, not sure it's realistic to answer this question in under 10 minutes given how many types of variable and their scopes (and a quirky exception !) are involved.

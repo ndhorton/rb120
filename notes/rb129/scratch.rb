@@ -1,43 +1,38 @@
-module Walkable
-  def walk
-    "#{name} #{gait} forward"
+class AnimalClass
+  attr_accessor :name, :animals
+  
+  def initialize(name, animals = [])
+    @name = name
+    @animals = animals
+  end
+  
+  def <<(animal)
+    animals << animal
+  end
+  
+  def +(other_class)
+    AnimalClass.new("temporary name", animals + other_class.animals)
   end
 end
 
-class Person
-  include Walkable
-
+class Animal
   attr_reader :name
-
+  
   def initialize(name)
     @name = name
   end
-
-  private
-
-  def gait
-    "strolls"
-  end
 end
 
-class Cat
-  include Walkable
+mammals = AnimalClass.new('Mammals')
+mammals << Animal.new('Human')
+mammals << Animal.new('Dog')
+mammals << Animal.new('Cat')
 
-  attr_reader :name
+birds = AnimalClass.new('Birds')
+birds << Animal.new('Eagle')
+birds << Animal.new('Blue Jay')
+birds << Animal.new('Penguin')
 
-  def initialize(name)
-    @name = name
-  end
+some_animal_classes = mammals + birds
 
-  private
-
-  def gait
-    "saunters"
-  end
-end
-
-mike = Person.new("Mike")
-p mike.walk
-
-kitty = Cat.new("Kitty")
-p kitty.walk
+p some_animal_classes 
