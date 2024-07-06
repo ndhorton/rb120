@@ -695,7 +695,7 @@ p sparky
 
 
 
-34.
+34. [Don't bother with this, weak question]
 
 ```ruby
 module Walkable

@@ -9,13 +9,14 @@ class CircularBuffer
   def get
     value = buffer[front]
     buffer[front] = nil
-    increment_front
+    increment_front unless value.nil?
     value
   end
 
   def put(value)
-    increment_front if buffer[back] # front of queue moves if we are
-                                    # overwriting oldest element
+    increment_front unless buffer[back].nil? # front of queue moves if we are
+                                             # overwriting oldest element,
+                                             # nil is sentinel empty value
     buffer[back] = value
     increment_back
     self
@@ -27,12 +28,10 @@ class CircularBuffer
   attr_accessor :front, :back
 
   def increment_front
-    return if buffer.all?(nil)
     self.front = (front + 1) % size
   end
 
   def increment_back
-    return if buffer.all?(nil)
     self.back = (back + 1) % size
   end
 end

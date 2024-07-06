@@ -1,1 +1,3 @@
-ingu.fly
+  # def initialize(diet, superpower)
+  #   super
+  # end

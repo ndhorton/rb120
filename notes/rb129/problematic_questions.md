@@ -1,20 +1,24 @@
-q3 - I do not see a way to describe 'why' what is output in detail, and answer the two questions on top of it in much less than 15 minutes. The code is just too complicated and the constant resolution question just requires so much detail in response (including stuff about namespaced constant resolution that is not mentioned in the material)
+q3 - I do not see a way to describe 'why' what is output in detail, and answer the two questions on top of it in much less than 15 minutes. The code is just too complicated and the constant-resolution question just requires so much detail in response (including stuff about namespaced constant resolution that is not mentioned in detail in the material)
 
 q4 - again just a long and awkward question to answer. Can be done in around 10 minutes. Would be difficult to do in much less.
 
 q12 - Definitely don't bother with this again
 
-q12 - took a long time to answer
+q14 - can be done in just over 10 minutes but finding it difficult
 
-q14 - took a long time to answer
+q19 - Took a long time to answer. I think the main problem here is that I don't have a good example ready to go.
 
-q16 - Took a long time to answer
+q22 - Took a long time, need to practice. Use the car-engine example to demonstrate the functionality of the collaborator contributing to the functionality of the containing object
 
-q19 - Took a long time to answer
+q26 - This shouldn't take that long. The points are
 
-q22 - Took a **very** long time to answer
+instance variables are scoped at the object level, and an instance variable once initialized is accessible by all the instance methods available to an object, whether the method is defined in the class of the object or in a class or module in the inheritance chain.
 
-q26 - Took a long time to answer
+In Ruby, an instance variable is only created once an instance method that initializes it is actually called on the object. Again, this is true regardless of where in the method lookup path for the object a method is defined.
+
+So although instance methods are inherited, and instance methods may initialize instance variables, instance variables themselves are not inherited directly from classes or mixin modules.
+
+The methods available to an object from its method lookup path define only the set of potential instance variables that might be initialized in an object. The only instance variables initialized when the object is instantiated are those initialized by the constructor whether that constructor is inherited or not.
 
 q30 -Took a long time to answer, probably because it asks for examples of when we would use method of all three types of access level, maybe should break up
 
@@ -26,7 +30,15 @@ q34 - took a long time to answer, very awkward, is it even asking for an explana
 
 q35 - What is OOP? Remember that OOP is partly about allowing us to think at a greater level of abstraction
 
-q36 - got confused, didn't know how to answer, I think this is actually a more basic question than I think, judging from the question-links document's link on this. It's literally just a single bullet point in the Summary for lesson 2.
+q36 - essentially:
+
+classes as blueprints/templates. Classes determine behaviors and attributes
+
+Behaviors are instance methods, attributes are potential instance variables
+
+Classes group behaviors and objects encapsulate state
+
+Creating an object from a class is called instantiation
 
 q43 - took a long time
 

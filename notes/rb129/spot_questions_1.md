@@ -16,7 +16,17 @@ p bob.name
 # What is output and why? What does this demonstrate about instance variables that differentiates them from local variables?
 ```
 
+We define a `Person` class on lines 1-7. We generate a `Person#name` getter method with a call to `attr_reader` on line 2. We define a `Person#set_name` method on lines 4-6 that sets instance variable `@name` to `"Bob"`.
 
+On line 9, we initialize local variable `bob` to a new `Person` object.
+
+On line 10, we call `Person#name` setter method on `bob` and pass the return value to `Kernel#p` to be output. The output is `nil`.
+
+The reason for this is that, since we have not called `set_name` on `bob`, we have not initialized the `@name` variable that the `name` method acts as a getter method for.
+
+When we reference an uninitialized instance variable in Ruby, the reference evaluates to to `nil` (without the variable being initialized to `nil`). This is in contrast to references to uninitialized local variables, which will raise a `NameError` exception.
+
+4m39s
 
 2.
 
@@ -42,7 +52,19 @@ p teddy.swim
 # What is output and why? What does this demonstrate about instance variables?
 ```
 
+On lines 1-5 we define a `Swimmable` module containing one instance method `enable_swimming`. The body of this method sets a `@can_swim` instance variable to `true`.
 
+On lines 7-13, we define a `Dog` class that mixes in the `Swimmable` module. We define `Dog#swim` on lines 10-12. Within the body of the method, an `if` modifier uses the instance variable `@can_swim` as a conditional. If `@can_swim` references a truthy object, the method returns the String `"swimming!"`. Otherwise the method returns `nil`, since an `if` clause with no successful condition returns `nil`.
+
+On line 15, we initialize local variable `teddy` to a new `Dog` object.
+
+On line 16, we call the `swim` method on `teddy` and pass the return value to `Kernel#p` to be output. The output is `nil`.
+
+This is because the `@can_swim` instance variable has not been initialized in `teddy`. The only method available to initialize it, `enable_swimming`, has not been called on `teddy`. Therefore the reference to `@can_swim` on line 11 in the `if` modifier is a reference to an uninitialized instance variable, and such a reference always returns `nil`. `nil` is the only other object in Ruby other than `false` that is considered falsey, so `swim` returns `nil`.
+
+This demonstrates that an instance variable is only initialized in an object once a method that initializes it has actually been called on the object. This code also demonstrates that uninitialized instance variables evaluate to `nil`.
+
+8m02s
 
 3.
 
@@ -530,9 +552,6 @@ bob.pets << kitty
 bob.pets << bud                     
 
 bob.pets.each { |pet| pet.jump } 
-
-
-# We raise an error in the code above. Why? What do `kitty` and `bud` represent in relation to our `Person` object?  
 ```
 
 10m43s
@@ -586,6 +605,109 @@ p al == alex # => true
 
 
 
+
+
+The `==` method appears as an operator because of the syntactic sugar surrounding its invocation, but it is a method, a 'fake' operator. The `==` method is conventionally defined to compare the principal object value of the caller with the principal object value of the argument, usually an object of the same class as the caller, though not always. If the values are considered equivalent, `==` returns `true`, `false` otherwise.
+
+In the code above, we define a `Person` class on lines 1-7. The `Person#initialize` constructor is defined with one parameter `name`, which it uses to initialize instance variable `@name` in the calling object. We generate a getter method `Person#name` for `@name` with a call to `Module#attr_reader` on line 2.
+
+On line 9, we initialize local variable `al` to a new `Person` object, passing a String object in literal notation `"Alexander"` through to the constructor.
+
+On line 10, we initialize local variable `alex` to a new `Person` object, passing another String object in literal notation with the same object value `"Alexander"`. Since this is again a string literal, this instantiates a new String object with the same value as the String object passed to the constructor of `al`, but they are not the identical String object. This could be demonstrated by comparing the object id of the `name` attribute of `alex` with the `name` attribute of `al` using the `Integer#==` method:
+
+```ruby
+al.name == alex.name # false
+```
+
+On line 11, we call `==` on `al` with `alex` passed as argument, passing  the return value to `Kernel#p` to be output to screen. This outputs `false`. The reason is that, since we have not overridden the inherited default `BasicObject#==` method, that will be the `==` method called.
+
+The `BasicObject#==` method compares as the principal object value of caller and argument the object id of the two objects. Since an object id is unique to an object, if two objects have the same object id then they are the same object. This is of limited use, since the `equal?` method is conventionally used for this purpose. This is why most classes that are to be used in equivalency comparisons override this method.
+
+If we wish to compare the `name` attributes of two `Person` objects for equivalency, we can simply define a `Person#==` method that returns `true` if the caller and argument have the same String value for their `name`.
+
+```ruby
+class Person
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+  
+  def ==(other_person)
+    name == other_person.name
+  end
+end
+
+al = Person.new('Alexander')
+alex = Person.new('Alexander')
+p al == alex # => true
+```
+
+Here, the work of the `==` method is pushed to the `String#==` method, since the `name` attribute tracks a String object. The `String#==` method compares two String objects' string values, returning `true` if both objects' string values have identical characters, `false` otherwise.
+
+13m47s
+
+14.
+
+```ruby
+class Person
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+end
+
+al = Person.new('Alexander')
+alex = Person.new('Alexander')
+p al == alex # => true
+
+
+# In the code above, we want to compare whether the two objects have the same name. `Line 11` currently returns `false`. How could we return `true` on `line 11`? 
+
+# Further, since `al.name == alex.name` returns `true`, does this mean the `String` objects referenced by `al` and `alex`'s `@name` instance variables are the same object? How could we prove our case?
+```
+
+The reason that line 11 outputs `false` is that we have not defined a `==` method in our `Person` class.
+
+The `==` method is conventionally defined to compare the principal object value of the caller to that of the argument (usually an object of the same class), returning `true` if the object values are considered equivalent, `false` otherwise.
+
+Since we have not overridden it with our own definition, the `==` method inherited by our `Person` class is the `BasicObject#==` method. `BasicObject#==` uses as the principal object value for comparison the object id of the caller and the argument, returning `true` if they have the same object id. Since an object's object id is unique, this means that `BasicObject#==` returns `true` only if caller and argument are the same object. This is why classes that are to be used with `==` override the method to provide a more meaningful value for equivalency comparison.
+
+To make line 11 return `true`, we can implement a `==` method in our `Person` class that compares the `name` attribute of the caller with that of the argument:
+
+```ruby
+class Person
+  attr_reader :name
+
+  def initialize(name)
+    @name = name
+  end
+  
+  def ==(other)
+    name == other.name
+  end
+end
+
+al = Person.new('Alexander')
+alex = Person.new('Alexander')
+p al == alex # => true
+```
+
+Our `Person#==` method uses `String#==` to make the comparison between the `name` of the caller and argument. This does not mean that `al.name == alex.name` returning `true` means that the two String objects are identical. Rather, it means that two different objects instantiated by each use of literal notation (lines 9 and 11) have the same principal object value, the string values have the same characters.
+
+We can demonstrate that they are not the same object using the `equal?` method, which returns `true` only if the caller and argument are the same object with the same object id:
+
+```ruby
+al.name.equal?(alex.name) # false
+```
+
+This will return `false` as they are not the same object.
+
+10m57s
+
+
+
 15.
 
 ```ruby
@@ -617,6 +739,56 @@ puts bob.name
 ```ruby
 # Why is it generally safer to invoke a setter method (if available) vs. referencing the instance variable directly when trying to set an instance variable within the class? Give an example.
 ```
+
+It is generally considered safer to use a setter method than setting an instance variable directly, within a class, since this isolates the logic for dealing with the variable in one place.
+
+If we have several methods in a class that set an instance variable directly, then if we later wish to add a check on values before they are reassigned to the variable, we will need to make changes to all of these methods. This is both laborious and prone to error. If we have used a setter method, however, we only need to make changes to the setter method itself. Thus, the use of a setter method follows the DRY principle and makes code easier to maintain.
+
+Similarly, the use of a method to set a variable means that the rest of our methods can be agnostic about the representation of the object, essentially reducing code dependencies within our class. We are free to split the data previously stored in a single instance variable so that it is tracked by two instance variables and this will not break existing code.
+
+For instance, if we begin with a `Person` class that tracks a `name`:
+
+```ruby
+class Person
+  def initialize(name)
+    @name = name
+  end
+  
+  def name
+    @name
+  end
+  
+  def name=(new_name)
+    @name = new_name
+  end
+end
+
+mike = Person.new("Michael Smith")
+puts mike.name # "Michael Smith"
+```
+
+We can then decide to split the string tracked by `@name` into a `@first_name` and `@last_name` while keeping the interface the same:
+
+```ruby
+class Person
+  def initialize(name)
+    @first_name, @last_name = name.split
+  end
+  
+  def name
+    @first_name + ' ' + @last_name
+  end
+  
+  def name=(new_name)
+    @first_name, @last_name = new_name.split
+  end
+end
+
+mike = Person.new("Michael Smith")
+puts mike.name # "Michael Smith"
+```
+
+9m17s
 
 
 
@@ -667,7 +839,62 @@ end
 # What is the `attr_accessor` method, and why wouldn’t we want to just add `attr_accessor` methods for every instance variable in our class? Give an example.
 ```
 
+The `Module#attr_accessor` takes one or more symbols as argumnets. For each symbol, simple getter and setter methods are generated for an instance variable of the name given as the symbol value.
 
+For instance,
+
+```ruby
+class Person
+  attr_acccessor :name
+end
+```
+
+generates a `name` getter method and a `name=` setter method for the instance variable `@name`.
+
+We do not generally want to use `attr_accessor` for every instance variable of a class for at least two reasons.
+
+Firstly, since `attr_accessor` generates both getter and setter at the same level of method access control, it cannot be used if we wish to have, for instance, a `public` getter and a `private` setter.
+
+Secondly, the methods generated by `attr_accessor` are simple getters and setters. So the example given above is equivalent to:
+
+```ruby
+class Person
+  def name=(n)
+    @name = n
+  end
+  
+  def name
+    @name
+  end
+end
+```
+
+If we need to add more logic to a setter, such as a check on the object passed as argument before it is permitted to be assigned to the variable, then we cannot use `attr_accessor`. Similarly, if we wish to manipulate or obscure data that is tracked by an instance variable before our getter returns it, then we cannot use `attr_accessor`.
+
+For instance,
+
+```ruby
+class Person
+  def initialize(name)
+    @name = name
+  end
+  
+  def name=(n)
+    @name = n.capitalize
+  end
+  
+  def name
+    @name
+  end
+end
+
+mike = Person.new("michael")
+puts mike.name # "Michael"
+```
+
+Here, we want to make sure that the string passed to `name=` is capitalized before `@name` is set to it. This requires writing our own `name=` method rather than relying on `attr_accessor`
+
+10m40s
 
 20.
 
@@ -690,6 +917,46 @@ end
 ```ruby
 # What are collaborator objects, and what is the purpose of using them in OOP? Give an example of how we would work with one.
 ```
+
+Any object that becomes part of another object's state is a collaborator object. We call these collaborators because they can assist the containing object in carrying out its responsibilities. The relationship between an object and its collaborator objects is an associative relationship, a 'has-a' relationship.
+
+An object becomes a collaborator of another object once it becomes part of that object's state, whether directly by being assigned to an instance variable, or indirectly through an intermediate object such as an Array.
+
+It is important to think in terms of collaborations from the class design phase onwards, since collaborations represent the lines of communication of actors in our programs. If an object is part of another object's state, the containing object can easily invoke methods on its collaborators as part of its own instance methods.
+
+Collaborator objects permit us to modularize the problem domain into separate but connected pieces, allowing us to break down the overall problem into smaller problems. Thinking in terms of collaborations between objects is thus a vital part of thinking in terms of objects; it is a vital part of object-oriented design and helps us model complicated problem domains.
+
+Any class of object can be a collaborator object, including objects of custom classes.
+
+For instance,
+
+```ruby
+class Car
+  def initialize
+    @engine = Engine.new
+  end
+  
+  def start
+    puts "Starting engine..."
+    @engine.start
+  end
+end
+
+class Engine
+  def start
+    puts "Engine started!"
+  end
+end
+
+car = Car.new
+car.start
+# "Starting engine..."
+# "Engine started!"
+```
+
+Here, we define a `Car` class (lines 1-10) and an `Engine` class (lines 12-16). When a `Car` object is instantiated, as on line 18, the `Car#initialize` constructor method (lines 2-4) initializes a new `Engine` object, which is used to initialize the `@engine` instance variable in the `Car` object. At this point, the `Engine` object has become a collaborator object of the `Car` object.
+
+On line 19, the `Car#start` method (defined on lines 6-9) is called on the `Car` object. On line 8, we can see that the `Car` object makes use of the collaborator to fulfill the its responsibilities. Specifically, the `Car#start` method is able to call `Engine#start` on the `Engine` object because it is tracked by the `@engine` instance variable. The functionality of the collaborator object contributes toward the functionality of the containing object.
 
 
 
@@ -741,6 +1008,33 @@ p bob.get_name # => "bob"
 ```ruby
 # How do class inheritance and mixing in modules affect instance variable scope? Give an example.
 ```
+
+Instance variables are scoped at the object level. Once initialized, an instance variable is available throughout the instance methods available to an object, regardless of whether those methods are defined in the class of the object, or in a class or module in the inheritance chain of that class.
+
+In Ruby, an instance variable is only initialized in an object once an instance method that initializes it is actually called on an object.
+
+So although instance methods are inherited, instance variables themselves are not inherited. The instance methods available to an object via the method lookup path of its class define the set of potential instance variables that can be initialized in that object, but no instance variable comes into existence in the object until the method that initializes it is called on the object. The only instance variables that are initialized as soon as the object is instantiated are those initialized by the `initialize` constructor, whether the constructor is inherited or defined in the object's class.
+
+For instance,
+
+```ruby
+module Nameable
+  def name=(n)
+    @name = n
+  end
+end
+
+class Person
+  include Nameable
+end
+
+tom = Person.new
+puts tom.inspect # <Person:0x...>
+tom.name = "Tom"
+puts tom.inspect # <Person:0x... @name="Tom">
+```
+
+Here, the instance variable `@name` is absent from the `inspect` string of a newly-instantiated `Person` object, as line 12 demonstrates. It is only once the setter method inherited from the `Nameable` module `name=` is actually called on our `Person` object on line 13 that `@name` is initialized in it. We can see from the output of line 14 that our `Person` object now has a `@name` instance variable.
 
 
 
@@ -804,6 +1098,67 @@ p sparky
 ```ruby
 # How is Method Access Control implemented in Ruby? Provide examples of when we would use public, protected, and private access modifiers.
 ```
+
+Many OOP languages include access control features to limit the accessibility of instance variables and functionality. Since Ruby instance variables can only be accessed from outside an object, if at all, through instance methods, access control in Ruby is often called method access control.
+
+Method access control is implemented in Ruby through methods defined in the `Module` class, `public`, `private` and `protected`. These methods are called 'access modifiers'.
+
+The `public` methods of a class comprise the public interface of a class. Methods are public by default, so `Module#public` is less commonly used than the other access control modifiers. Public methods should be limited to only those methods necessary for the class to be useful to users of the class. The smaller the public interface, the simpler the class is to use. A limited public interface also limits code dependencies, making the class easier to maintain.
+
+`private` methods can only be called from within the class on the calling object. `private` methods can be considered implementation details of a class and code outside the class cannot form dependencies on them. We make methods `private` when they do work within the class but do not need to be exposed to users of the class.
+
+For instance,
+
+```ruby
+class Customer
+  def initialize(name, card_number)
+    @name = name
+    @card_number = card_number
+  end
+ 
+  def payment_method
+    "xxxx-xxxx-xxxx-#{last_four_digits}"
+  end
+  
+  private
+  
+  def last_four_digits
+    @card_number[-4..-1]
+  end
+end
+
+mike = Customer.new("Michael Smith", "2345-5321-8372-8281")
+puts mike.payment_method # "xxxx-xxxx-xxxx-8281"
+puts mike.last_four_digits # raises NoMethodError
+```
+
+Here, we define a `Customer` class, with a `public` (by default) `Customer#payment_method` that can be called from outside the class to return limited information about a `Customer`'s payment details. This `public` method makes use of a `private` `Customer#last_four_digits` method in order to perform part of its work. This method is `private` because we do not need to expose it separately as part of the class's public interface.
+
+`protected` methods are similar to `private` methods but can be called within the class on an object of the class that is not the calling object, usually one passed in as an argument to a `public` method. For instance,
+
+```ruby
+class Person
+  def initialize(name, height_in_cm)
+    @name = name
+    @height = height_in_cm
+  end
+  
+  def taller?(other_person)
+    height > other_person.height
+  end
+  
+  protected
+  
+  attr_reader :height
+end
+
+mike = Person.new("Mike", 175)
+joe = Person.new("Joe", 180)
+
+puts mike.taller?(joe) # true
+```
+
+Here, we do not need to expose the `Person#height` method as part of the public interface. However, we cannot make it `private` because our `Person#taller?` method needs to be able to call it on another `Person` object passed as argument. Here, `protected` provides the right level of access control for our `height` method.
 
 
 
@@ -897,6 +1252,34 @@ p kitty.walk
 ```ruby
 # What is the relationship between classes and objects in Ruby?
 ```
+
+In Ruby, a class is a blueprint or template for objects. Classes define what an object can do (behaviors) and what it is made of (attributes).
+
+The behaviors available to an object are the instance methods predetermined by its class. The attributes of an object are its set of potential instance variables. In Ruby, an instance variable is only initialized in an object when the instance method that initializes it is actually called on that object. But the set of potential instance variables that might be initialized in an object is predetermined by the instance methods available to that object, which are predetermined by the class.
+
+Classes group behaviors and objects encapsulate state. All objects of a class have access to the same behaviors, instance methods. Each object has its own set of instance variables that track its distinct state. The state of an object is particular to that object, and the instance variables of one object are not shared with any other object, even objects of the same class.
+
+The act of creating an object from a class is called 'instantiation', and objects are 'instances' of classes. Objects of custom classes are usually instantiated by calling the class method `new` on the class, which in turn calls the constructor, the private instance method `initialize`, on the new object, which initializes the state of the object.
+
+```ruby
+class Cat
+  def initialize(name)
+    @name = name
+  end
+  
+  def speak
+    puts "#{@name} says meow!"
+  end
+end
+
+fluffy = Cat.new("Fluffy")
+garfield = Cat.new("Garfield")
+
+fluffy.speak # "Fluffy says meow!"
+garfield.speak # "Garfield says meow!"
+```
+
+6m57s
 
 
 
