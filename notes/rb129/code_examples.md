@@ -178,3 +178,201 @@ kitty = Cat.new('Sophie')
 p kitty.identify # '<Cat:0x... @name="Sophie">'
 ```
 
+```ruby
+class Selfish
+  attr_accessor :value
+  
+  def self.identify_class # class method defintion
+    self # references class
+  end
+  
+  def identify_object
+    self # references calling object
+  end
+  
+  def set_value(value)
+    self.value = value # setter method invocation
+  end
+end
+
+puts Selfish.identify_class # Selfish
+
+selfish = Selfish.new
+selfish.set_value("I'm a Selfish object")
+p selfish.identify_object # <Selfish:0x... @value="I'm a Selfish object"> 
+```
+
+
+
+Polymorphism
+
+Polymorphism through class inheritance
+
+```ruby
+class Animal
+  def move
+  end
+end
+
+class Fish < Animal
+  def move
+    puts "swim"
+  end
+end
+
+class Cat < Animal
+  def move
+    puts "walk"
+  end
+end
+
+# Sponges and Corals don't have a separate move method - they don't move
+class Sponge < Animal; end
+class Coral < Animal; end
+
+animals = [Fish.new, Cat.new, Sponge.new, Coral.new]
+animals.each { |animal| animal.move }
+```
+
+```ruby
+# mine
+class Vehicle
+  def start
+    puts "Starting engine..."
+  end
+end
+
+class Car < Vehicle; end
+
+class Truck < Vehicle; end
+
+class Speedboat < Vehicle
+  def start
+    puts "Starting outboard motor..."
+  end
+end
+
+vehicles = [Car.new, Truck.new, Speedboat.new]
+vehicles.each { |vehicle| vehicle.start }
+```
+
+
+
+
+
+
+
+Polymorphism through mixin modules
+
+```ruby
+module Coatable
+  def coating
+    "I'm covered in chocolate"
+  end
+end
+
+class JaffaCake
+  include Coatable         # mixing in Coatable module
+end
+
+class Raisin
+  include Coatable         # mixing in Coatable module
+end
+
+snacks = [JaffaCake.new, Raisin.new]
+snacks.each { |snack| puts snack.coating }
+```
+
+```ruby
+# mine
+
+module Climbable
+  def climb
+    puts "I'm climbing..."
+  end
+end
+
+class Cat
+  include Climbable
+end
+
+class Mountaineer
+  include Climbable
+end
+
+climbers = [Cat.new, Mountaineer.new]
+climbers.each { |climber| climber.climb }
+```
+
+
+
+
+
+Polymorphism through Duck Typing
+
+```ruby
+class Wedding
+  attr_reader :guests, :flowers, :songs
+
+  def prepare(preparers)
+    preparers.each do |preparer|
+      preparer.prepare_wedding(self)
+    end
+  end
+end
+
+class Chef
+  def prepare_wedding(wedding)
+    prepare_food(wedding.guests)
+  end
+
+  def prepare_food(guests)
+    #implementation
+  end
+end
+
+class Decorator
+  def prepare_wedding(wedding)
+    decorate_place(wedding.flowers)
+  end
+
+  def decorate_place(flowers)
+    # implementation
+  end
+end
+
+class Musician
+  def prepare_wedding(wedding)
+    prepare_performance(wedding.songs)
+  end
+
+  def prepare_performance(songs)
+    #implementation
+  end
+end
+```
+
+```ruby
+class Duck
+  def fly
+    flap_wings
+  end
+  
+  def flap_wings
+  end
+end
+
+class Airplane
+  def fly
+    start_engines
+  end
+  
+  def start_engines
+  end
+end
+
+flyers = [Duck.new, Airplane.new]
+
+flyers.each { |flyer| flyer.fly }
+```
+

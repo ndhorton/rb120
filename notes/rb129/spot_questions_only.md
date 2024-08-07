@@ -663,7 +663,7 @@ p sparky
 
 
 
-30.
+30. [should possibly be broken into parts]
 
 ```ruby
 # How is Method Access Control implemented in Ruby? Provide examples of when we would use public, protected, and private access modifiers.
@@ -679,7 +679,7 @@ p sparky
 
 
 
-32.
+32. [half an hour's worth of stuff]
 
 ```ruby
 # What is polymorphism and how can we implement polymorphism in Ruby? Provide examples.
@@ -748,7 +748,7 @@ p kitty.walk
 
 
 
-35.
+35. [problems it solves are in one of the quizzes, lesson 1 I think]
 
 ```ruby
 # What is Object Oriented Programming, and why was it created? What are the benefits of OOP, and examples of problems it solves?
@@ -1079,7 +1079,7 @@ end
 
 
 
-50.
+50. [probably should be several questions, the second instance variable doesn't actually exist either since there is no way for it to be set]
 
 ```ruby
 class Person
